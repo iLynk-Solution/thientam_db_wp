@@ -1,0 +1,45 @@
+{
+    "key": "group_training_general_info",
+    "title": "Thông tin chung Gói Đào Tạo (General Info)",
+    "fields": [
+        {
+            "key": "field_training_subtitle",
+            "label": "Tiêu đề phụ (Subtitle)",
+            "name": "training_subtitle",
+            "type": "text",
+            "instructions": "VD: Giáo trình chuẩn hóa Cổ học phương Đông & Tử Vi thực chiến",
+            "placeholder": "Nhập tiêu đề phụ..."
+        },
+        {
+            "key": "field_training_duration",
+            "label": "Thời lượng / Số chuyên đề (Duration)",
+            "name": "training_duration",
+            "type": "text",
+            "instructions": "VD: 10 chuyên đề cốt lõi, 9 chuyên đề chuyên sâu...",
+            "placeholder": "10 chuyên đề cốt lõi"
+        },
+        {
+            "key": "field_training_target_audience",
+            "label": "Đối tượng phù hợp tổng quát (Target Audience Summary)",
+            "name": "training_target_audience",
+            "type": "textarea",
+            "rows": 3,
+            "instructions": "Tóm tắt đối tượng phù hợp nhất với khóa học này."
+        }
+    ],
+    "location": [
+        [
+            {
+                "param": "page_template",
+                "operator": "==",
+                "value": "template-training-detail.php"
+            }
+        ]
+    ],
+    "menu_order": 1,
+    "position": "normal",
+    "style": "default",
+    "label_placement": "top",
+    "instruction_placement": "label",
+    "active": true
+}

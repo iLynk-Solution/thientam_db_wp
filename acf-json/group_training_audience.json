@@ -1,0 +1,39 @@
+{
+    "key": "group_training_audience",
+    "title": "Đối tượng phù hợp chi tiết (Audience Items)",
+    "fields": [
+        {
+            "key": "field_training_audience_items",
+            "label": "Danh sách đối tượng chi tiết",
+            "name": "training_audience_items",
+            "type": "repeater",
+            "instructions": "Các gạch đầu dòng liệt kê đối tượng phù hợp khóa học",
+            "layout": "table",
+            "button_label": "Thêm Đối Tượng",
+            "sub_fields": [
+                {
+                    "key": "field_audience_item_text",
+                    "label": "Nội dung đối tượng",
+                    "name": "item",
+                    "type": "text",
+                    "placeholder": "VD: Người muốn hiểu sâu về mệnh bàn cá nhân, gia đình và con cái"
+                }
+            ]
+        }
+    ],
+    "location": [
+        [
+            {
+                "param": "page_template",
+                "operator": "==",
+                "value": "template-training-detail.php"
+            }
+        ]
+    ],
+    "menu_order": 3,
+    "position": "normal",
+    "style": "default",
+    "label_placement": "top",
+    "instruction_placement": "label",
+    "active": true
+}

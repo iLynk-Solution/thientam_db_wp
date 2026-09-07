@@ -1,0 +1,106 @@
+<?php
+/**
+ * Theme functions and definitions.
+ *
+ * @package HelloElementorChild
+ */
+
+if ( ! defined( "ABSPATH" ) ) {
+	exit; // Exit if accessed directly.
+}
+
+define( "HELLO_ELEMENTOR_CHILD_VERSION", "1.0.0" );
+
+/**
+ * Load child theme scripts & styles.
+ */
+function hello_elementor_child_scripts_styles() {
+	wp_enqueue_style(
+		"hello-elementor-child-style",
+		get_stylesheet_directory_uri() . "/style.css",
+		[
+			"hello-elementor-theme-style",
+		],
+		HELLO_ELEMENTOR_CHILD_VERSION
+	);
+}
+add_action( "wp_enqueue_scripts", "hello_elementor_child_scripts_styles", 20 );
+
+/**
+ * Tắt hoàn toàn Gutenberg Block Editor (Dùng Classic Editor)
+ */
+add_filter( "use_block_editor_for_post", "__return_false", 10 );
+add_filter( "use_block_editor_for_post_type", "__return_false", 10 );
+add_filter( "use_widgets_block_editor", "__return_false" );
+
+// Xóa CSS mặc định của Gutenberg ở frontend để web nhẹ hơn
+add_action( "wp_enqueue_scripts", function() {
+    wp_dequeue_style( "wp-block-library" );
+    wp_dequeue_style( "wp-block-library-theme" );
+    wp_dequeue_style( "global-styles" );
+}, 100 );
+
+/**
+ * Nạp khung nhập liệu chi tiết dịch vụ NATIVE thuần WordPress (KHÔNG CẦN PLUGIN)
+ */
+require_once get_stylesheet_directory() . "/inc/native-service-metabox.php";
+/**
+ * Nạp REST API endpoints cho Chi tiết dịch vụ
+ */
+require_once get_stylesheet_directory() . "/inc/api-service-detail.php";
+/**
+ * Nạp Post Type & REST API Cảm nhận khách hàng (Testimonials)
+ */
+require_once get_stylesheet_directory() . "/inc/post-type-testimonial.php";
+/**
+ * Nạp Post Type & REST API Tin tức & Tri thức (News)
+ */
+require_once get_stylesheet_directory() . "/inc/post-type-news.php";
+/**
+ * Nạp Post Type, ACF Field Groups & REST API Gói đào tạo (Training)
+ */
+require_once get_stylesheet_directory() . "/inc/post-type-training.php";
+/**
+ * Nạp Post Type & REST API Tiếp nhận Form Submissions (Leads)
+ */
+require_once get_stylesheet_directory() . "/inc/post-type-submission.php";
+// Nạp Cấu hình Gửi Email SMTP & Thông báo Lead (Native SMTP Settings)
+require_once get_stylesheet_directory() . "/inc/smtp-settings.php";
+
+/**
+ * Tự động nạp Plugin iLynk SePay VietQR Payment Gateway (Phát triển bởi iLynk)
+ */
+$ilynk_sepay_plugin = dirname(dirname(get_stylesheet_directory())) . '/plugins/ilynk-sepay-vietqr/ilynk-sepay-vietqr.php';
+if (! defined('ILYNK_SEPAY_VERSION') && file_exists($ilynk_sepay_plugin)) {
+    require_once $ilynk_sepay_plugin;
+}
+
+/**
+ * Hỗ trợ Thumbnail / Ảnh đại diện (Featured Image) & Excerpt cho Page và Post
+ */
+add_action( "after_setup_theme", function() {
+    add_theme_support( "post-thumbnails" );
+    add_post_type_support( "page", "thumbnail" );
+    add_post_type_support( "page", "excerpt" );
+} );
+
+/**
+ * Giới hạn tối đa 5 bản sao lưu chỉnh sửa (Revisions) để tối ưu cơ sở dữ liệu
+ */
+add_filter( "wp_revisions_to_keep", function( $num, $post ) {
+    return 5;
+}, 10, 2 );
+
+/**
+ * Điều hướng toàn bộ giao diện Frontend WordPress hiển thị màn hình Logo Thiên Tâm
+ * (Vì frontend chính đã chạy trên Next.js độc lập)
+ */
+add_filter( "template_include", function( $template ) {
+    if ( ! is_admin() && ! defined( "REST_REQUEST" ) ) {
+        $index_splash = get_stylesheet_directory() . "/index.php";
+        if ( file_exists( $index_splash ) ) {
+            return $index_splash;
+        }
+    }
+    return $template;
+}, 99 );

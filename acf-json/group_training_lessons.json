@@ -1,0 +1,39 @@
+{
+    "key": "group_training_lessons",
+    "title": "Danh sách Chuyên đề / Bài giảng (Lessons)",
+    "fields": [
+        {
+            "key": "field_training_lessons",
+            "label": "Danh sách các chuyên đề / bài giảng",
+            "name": "training_lessons",
+            "type": "repeater",
+            "instructions": "Nhập danh sách bài học theo thứ tự chương trình giảng dạy",
+            "layout": "table",
+            "button_label": "Thêm Chuyên Đề",
+            "sub_fields": [
+                {
+                    "key": "field_lesson_title",
+                    "label": "Tên chuyên đề / bài học",
+                    "name": "lesson_title",
+                    "type": "text",
+                    "placeholder": "VD: Giới thiệu nhập môn, Ý nghĩa 14 sao chính tinh..."
+                }
+            ]
+        }
+    ],
+    "location": [
+        [
+            {
+                "param": "page_template",
+                "operator": "==",
+                "value": "template-training-detail.php"
+            }
+        ]
+    ],
+    "menu_order": 5,
+    "position": "normal",
+    "style": "default",
+    "label_placement": "top",
+    "instruction_placement": "label",
+    "active": true
+}

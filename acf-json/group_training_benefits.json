@@ -1,0 +1,46 @@
+{
+    "key": "group_training_benefits",
+    "title": "Hình thức & Quyền lợi học viên (Benefit Items)",
+    "fields": [
+        {
+            "key": "field_training_benefit_items",
+            "label": "Danh sách quyền lợi",
+            "name": "training_benefit_items",
+            "type": "repeater",
+            "instructions": "Các quyền lợi và hình thức học dành cho học viên",
+            "layout": "table",
+            "button_label": "Thêm Quyền Lợi",
+            "sub_fields": [
+                {
+                    "key": "field_benefit_item_highlight",
+                    "label": "Tiêu đề in đậm (Highlight)",
+                    "name": "highlight",
+                    "type": "text",
+                    "placeholder": "VD: Hình thức linh hoạt:, Giáo trình độc quyền:"
+                },
+                {
+                    "key": "field_benefit_item_text",
+                    "label": "Nội dung chi tiết (Text)",
+                    "name": "text",
+                    "type": "text",
+                    "placeholder": "VD: Học trực tiếp hoặc online qua Zoom có ghi hình..."
+                }
+            ]
+        }
+    ],
+    "location": [
+        [
+            {
+                "param": "page_template",
+                "operator": "==",
+                "value": "template-training-detail.php"
+            }
+        ]
+    ],
+    "menu_order": 4,
+    "position": "normal",
+    "style": "default",
+    "label_placement": "top",
+    "instruction_placement": "label",
+    "active": true
+}

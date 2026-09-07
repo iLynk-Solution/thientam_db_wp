@@ -1,0 +1,46 @@
+{
+    "key": "group_training_metrics",
+    "title": "Chỉ số nổi bật (Key Metrics Bar)",
+    "fields": [
+        {
+            "key": "field_training_metrics",
+            "label": "Danh sách chỉ số",
+            "name": "training_metrics",
+            "type": "repeater",
+            "instructions": "Thêm các chỉ số thống kê (Số chuyên đề, % Thực hành, Hình thức học, Chế độ hỗ trợ)",
+            "layout": "table",
+            "button_label": "Thêm Chỉ Số",
+            "sub_fields": [
+                {
+                    "key": "field_metric_value",
+                    "label": "Giá trị (Value)",
+                    "name": "value",
+                    "type": "text",
+                    "placeholder": "VD: 10 Chuyên đề, 60%+ Thực hành"
+                },
+                {
+                    "key": "field_metric_desc",
+                    "label": "Mô tả ngắn (Description)",
+                    "name": "desc",
+                    "type": "text",
+                    "placeholder": "VD: Lộ trình bài bản từ gốc, Luận giải lá số thực tế"
+                }
+            ]
+        }
+    ],
+    "location": [
+        [
+            {
+                "param": "page_template",
+                "operator": "==",
+                "value": "template-training-detail.php"
+            }
+        ]
+    ],
+    "menu_order": 2,
+    "position": "normal",
+    "style": "default",
+    "label_placement": "top",
+    "instruction_placement": "label",
+    "active": true
+}

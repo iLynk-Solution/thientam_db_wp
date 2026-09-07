@@ -1,0 +1,430 @@
+{
+    "key": "group_service_detail_settings",
+    "title": "Cài đặt Chi tiết Dịch vụ (Service Detail)",
+    "fields": [
+        {
+            "key": "field_tab_hero",
+            "label": "01. Hero Banner",
+            "name": "",
+            "type": "tab",
+            "placement": "top",
+            "endpoint": 0
+        },
+        {
+            "key": "field_service_hero_eyebrow",
+            "label": "Dòng tiêu đề phụ trên (Eyebrow)",
+            "name": "service_hero_eyebrow",
+            "type": "text",
+            "default_value": "DỊCH VỤ TƯ VẤN CÁ NHÂN",
+            "placeholder": "DỊCH VỤ TƯ VẤN CÁ NHÂN"
+        },
+        {
+            "key": "field_service_hero_title",
+            "label": "Tiêu đề chính (Title)",
+            "name": "service_hero_title",
+            "type": "text",
+            "default_value": "Sự vật • Sự việc"
+        },
+        {
+            "key": "field_service_hero_subtitle",
+            "label": "Tiêu đề phụ dưới (Subtitle)",
+            "name": "service_hero_subtitle",
+            "type": "text",
+            "default_value": "Gỡ rối một vấn đề cụ thể"
+        },
+        {
+            "key": "field_service_icon",
+            "label": "Biểu tượng dịch vụ (Icon)",
+            "name": "service_icon",
+            "type": "select",
+            "instructions": "Chọn icon đại diện cho dịch vụ này hiển thị trên các thẻ (Card) trang chủ và danh sách dịch vụ.",
+            "choices": {
+                "compass": "Compass (La bàn / Sự vật sự việc)",
+                "smartphone": "Smartphone (Điện thoại / Phong thủy số)",
+                "home": "Home (Nhà ở / Không gian sống & doanh nghiệp)",
+                "sparkles": "Sparkles (Tử vi / Bát tự / Kỳ môn mệnh)",
+                "users": "Users (Gia đạo / Gia đình & Hòa hợp)",
+                "trending-up": "Trending Up (Doanh nghiệp / Tăng trưởng)",
+                "briefcase": "Briefcase (Hồ sơ / Doanh nghiệp)"
+            },
+            "default_value": "compass",
+            "allow_null": 0,
+            "multiple": 0,
+            "ui": 1,
+            "ajax": 0,
+            "return_format": "value"
+        },
+        {
+            "key": "field_service_hero_description",
+            "label": "Mô tả ngắn Hero",
+            "name": "service_hero_description",
+            "type": "textarea",
+            "rows": 3,
+            "default_value": "Thêm một góc nhìn khách quan để xem xét, định hướng và lựa chọn phương án phù hợp."
+        },
+        {
+            "key": "field_service_hero_image",
+            "label": "Ảnh Banner Hero",
+            "name": "service_hero_image",
+            "type": "image",
+            "return_format": "url"
+        },
+        {
+            "key": "field_service_hero_primary_btn",
+            "label": "Chữ nút Đặt lịch",
+            "name": "service_hero_primary_btn",
+            "type": "text",
+            "default_value": "Đặt lịch tư vấn"
+        },
+        {
+            "key": "field_service_hero_pricing_btn",
+            "label": "Chữ nút Xem bảng giá",
+            "name": "service_hero_pricing_btn",
+            "type": "text",
+            "default_value": "Xem bảng giá"
+        },
+        {
+            "key": "field_tab_nav",
+            "label": "02. Menu Điều Hướng (Nav Tabs)",
+            "name": "",
+            "type": "tab",
+            "placement": "top",
+            "endpoint": 0
+        },
+        {
+            "key": "field_service_nav_tabs",
+            "label": "Danh sách Tabs điều hướng",
+            "name": "service_nav_tabs",
+            "type": "repeater",
+            "layout": "table",
+            "button_label": "Thêm Tab",
+            "sub_fields": [
+                {
+                    "key": "field_nav_tab_id",
+                    "label": "ID Section (Anchor)",
+                    "name": "tab_id",
+                    "type": "text",
+                    "placeholder": "tong-quan / bang-gia / quyen-loi / quy-trinh"
+                },
+                {
+                    "key": "field_nav_tab_label",
+                    "label": "Tên hiển thị",
+                    "name": "tab_label",
+                    "type": "text"
+                },
+                {
+                    "key": "field_nav_tab_icon",
+                    "label": "Icon Key",
+                    "name": "tab_icon",
+                    "type": "select",
+                    "choices": {
+                        "compass": "Compass (La bàn)",
+                        "clipboard": "Clipboard (Bảng giá)",
+                        "shield": "Shield (Quyền lợi)",
+                        "user": "User (Quy trình)",
+                        "sparkles": "Sparkles (Ngôi sao)"
+                    },
+                    "default_value": "compass"
+                }
+            ]
+        },
+        {
+            "key": "field_tab_overview",
+            "label": "03. Tổng Quan (Overview)",
+            "name": "",
+            "type": "tab",
+            "placement": "top",
+            "endpoint": 0
+        },
+        {
+            "key": "field_overview_title_prefix",
+            "label": "Tiêu đề đầu",
+            "name": "overview_title_prefix",
+            "type": "text",
+            "default_value": "Khi bạn cần thêm"
+        },
+        {
+            "key": "field_overview_title_highlight",
+            "label": "Tiêu đề nổi bật (Highlight)",
+            "name": "overview_title_highlight",
+            "type": "text",
+            "default_value": "một góc nhìn"
+        },
+        {
+            "key": "field_overview_desc",
+            "label": "Mô tả phần Tổng quan",
+            "name": "overview_desc",
+            "type": "textarea",
+            "rows": 3,
+            "default_value": "Trong nhiều tình huống, một góc nhìn khách quan sẽ giúp bạn nhìn rõ bản chất và đưa ra lựa chọn phù hợp hơn."
+        },
+        {
+            "key": "field_overview_cards",
+            "label": "Các thẻ điểm nổi bật",
+            "name": "overview_cards",
+            "type": "repeater",
+            "layout": "block",
+            "button_label": "Thêm Thẻ Tổng Quan",
+            "sub_fields": [
+                {
+                    "key": "field_card_icon",
+                    "label": "Icon",
+                    "name": "card_icon",
+                    "type": "select",
+                    "choices": {
+                        "briefcase": "Briefcase (Cặp tài liệu)",
+                        "calendar": "Calendar (Lịch)",
+                        "search": "Search (Kính lúp)",
+                        "sparkles": "Sparkles (Bát tự)",
+                        "home": "Home (Nhà cửa)",
+                        "users": "Users (Gia đình)"
+                    },
+                    "default_value": "briefcase"
+                },
+                {
+                    "key": "field_card_title",
+                    "label": "Tiêu đề thẻ",
+                    "name": "card_title",
+                    "type": "text"
+                },
+                {
+                    "key": "field_card_desc",
+                    "label": "Mô tả thẻ",
+                    "name": "card_desc",
+                    "type": "textarea",
+                    "rows": 2
+                }
+            ]
+        },
+        {
+            "key": "field_tab_pricing",
+            "label": "04. Bảng Giá (Pricing)",
+            "name": "",
+            "type": "tab",
+            "placement": "top",
+            "endpoint": 0
+        },
+        {
+            "key": "field_pricing_title_prefix",
+            "label": "Tiêu đề đầu bảng giá",
+            "name": "pricing_title_prefix",
+            "type": "text",
+            "default_value": "Bảng giá tư vấn"
+        },
+        {
+            "key": "field_pricing_title_highlight",
+            "label": "Tiêu đề nổi bật bảng giá",
+            "name": "pricing_title_highlight",
+            "type": "text",
+            "default_value": "Sự vật • Sự việc"
+        },
+        {
+            "key": "field_pricing_desc",
+            "label": "Mô tả bảng giá",
+            "name": "pricing_desc",
+            "type": "textarea",
+            "rows": 2,
+            "default_value": "Bảng chi phí tư vấn minh bạch, rõ ràng theo từng hạng mục nhằm mang lại giải pháp thấu đáo và thiết thực nhất cho Quý vị."
+        },
+        {
+            "key": "field_pricing_header_stt",
+            "label": "Cột 1 (STT)",
+            "name": "pricing_header_stt",
+            "type": "text",
+            "default_value": "STT"
+        },
+        {
+            "key": "field_pricing_header_service",
+            "label": "Cột 2 (Tên hạng mục)",
+            "name": "pricing_header_service",
+            "type": "text",
+            "default_value": "HẠNG MỤC TƯ VẤN"
+        },
+        {
+            "key": "field_pricing_header_content",
+            "label": "Cột 3 (Nội dung)",
+            "name": "pricing_header_content",
+            "type": "text",
+            "default_value": "NỘI DUNG"
+        },
+        {
+            "key": "field_pricing_header_price",
+            "label": "Cột 4 (Phí tư vấn)",
+            "name": "pricing_header_price",
+            "type": "text",
+            "default_value": "PHÍ TƯ VẤN"
+        },
+        {
+            "key": "field_pricing_items",
+            "label": "Các gói trong bảng giá",
+            "name": "pricing_items",
+            "type": "repeater",
+            "layout": "table",
+            "button_label": "Thêm Gói Bảng Giá",
+            "sub_fields": [
+                {
+                    "key": "field_pricing_item_stt",
+                    "label": "STT",
+                    "name": "stt",
+                    "type": "text",
+                    "placeholder": "01"
+                },
+                {
+                    "key": "field_pricing_item_service",
+                    "label": "Hạng mục tư vấn",
+                    "name": "service",
+                    "type": "text"
+                },
+                {
+                    "key": "field_pricing_item_content",
+                    "label": "Nội dung",
+                    "name": "content",
+                    "type": "text"
+                },
+                {
+                    "key": "field_pricing_item_price",
+                    "label": "Phí tư vấn",
+                    "name": "price",
+                    "type": "text",
+                    "placeholder": "1.500.000đ"
+                }
+            ]
+        },
+        {
+            "key": "field_pricing_note",
+            "label": "Ghi chú chân bảng giá",
+            "name": "pricing_note",
+            "type": "text",
+            "default_value": "Nội dung tư vấn mang tính tham khảo và định hướng."
+        },
+        {
+            "key": "field_tab_benefits",
+            "label": "05. Quyền Lợi (Benefits)",
+            "name": "",
+            "type": "tab",
+            "placement": "top",
+            "endpoint": 0
+        },
+        {
+            "key": "field_benefits_title_prefix",
+            "label": "Tiêu đề đầu quyền lợi",
+            "name": "benefits_title_prefix",
+            "type": "text",
+            "default_value": "Quyền lợi"
+        },
+        {
+            "key": "field_benefits_title_highlight",
+            "label": "Tiêu đề nổi bật quyền lợi",
+            "name": "benefits_title_highlight",
+            "type": "text",
+            "default_value": "đồng hành"
+        },
+        {
+            "key": "field_benefits_desc",
+            "label": "Mô tả phụ quyền lợi",
+            "name": "benefits_desc",
+            "type": "textarea",
+            "rows": 2,
+            "default_value": "Thiên Tâm không chỉ dừng lại ở buổi tư vấn mà luôn sẵn sàng đồng hành, hỗ trợ Quý vị thấu đáo trong suốt quá trình áp dụng giải pháp."
+        },
+        {
+            "key": "field_benefits_content",
+            "label": "Nội dung quyền lợi chi tiết",
+            "name": "benefits_content",
+            "type": "textarea",
+            "rows": 3,
+            "default_value": "Sau buổi tư vấn, Thiên Tâm sẽ hỗ trợ giải đáp và làm rõ thêm các nội dung liên quan trực tiếp đến sự việc đã tư vấn, tùy theo phạm vi của từng dịch vụ."
+        },
+        {
+            "key": "field_tab_related",
+            "label": "06. Dịch Vụ Liên Quan (Related)",
+            "name": "",
+            "type": "tab",
+            "placement": "top",
+            "endpoint": 0
+        },
+        {
+            "key": "field_related_title_prefix",
+            "label": "Tiêu đề đầu",
+            "name": "related_title_prefix",
+            "type": "text",
+            "default_value": "Dịch vụ"
+        },
+        {
+            "key": "field_related_title_highlight",
+            "label": "Tiêu đề nổi bật",
+            "name": "related_title_highlight",
+            "type": "text",
+            "default_value": "liên quan"
+        },
+        {
+            "key": "field_related_desc",
+            "label": "Mô tả dịch vụ liên quan",
+            "name": "related_desc",
+            "type": "textarea",
+            "rows": 2,
+            "default_value": "Khám phá thêm các dịch vụ tư vấn chuyên sâu khác từ Thiên Tâm để có cái nhìn toàn diện cho cuộc sống, gia đạo và công việc của Quý vị."
+        },
+        {
+            "key": "field_tab_seo",
+            "label": "07. Cấu hình SEO",
+            "name": "",
+            "type": "tab",
+            "placement": "top",
+            "endpoint": 0
+        },
+        {
+            "key": "field_seo_meta_title",
+            "label": "Tiêu đề SEO tùy biến (Meta Title)",
+            "name": "seo_meta_title",
+            "type": "text",
+            "placeholder": "Để trống sẽ tự động lấy Tiêu đề trang..."
+        },
+        {
+            "key": "field_seo_meta_description",
+            "label": "Mô tả SEO tùy biến (Meta Description)",
+            "name": "seo_meta_description",
+            "type": "textarea",
+            "rows": 3,
+            "placeholder": "Để trống sẽ tự động lấy Mô tả ngắn Hero..."
+        },
+        {
+            "key": "field_seo_meta_keywords",
+            "label": "Từ khóa SEO (Meta Keywords)",
+            "name": "seo_meta_keywords",
+            "type": "text",
+            "placeholder": "phong thủy nhà ở, tư vấn tử vi, chuyên gia phong thủy..."
+        },
+        {
+            "key": "field_seo_og_image",
+            "label": "Ảnh chia sẻ Mạng Xã Hội (OG Image URL)",
+            "name": "seo_og_image",
+            "type": "text",
+            "placeholder": "https://... (Để trống sẽ tự động lấy Ảnh đại diện / Featured Image)"
+        }
+    ],
+    "location": [
+        [
+            {
+                "param": "page_template",
+                "operator": "==",
+                "value": "template-service-detail.php"
+            }
+        ],
+        [
+            {
+                "param": "post_type",
+                "operator": "==",
+                "value": "page"
+            }
+        ]
+    ],
+    "menu_order": 0,
+    "position": "normal",
+    "style": "default",
+    "label_placement": "top",
+    "instruction_placement": "label",
+    "hide_on_screen": "",
+    "active": true,
+    "description": "Các trường tùy biến dữ liệu cho trang chi tiết dịch vụ Thiên Tâm"
+}
