@@ -66,14 +66,16 @@ require_once get_stylesheet_directory() . "/inc/post-type-training.php";
 require_once get_stylesheet_directory() . "/inc/post-type-submission.php";
 // Nạp Cấu hình Gửi Email SMTP & Thông báo Lead (Native SMTP Settings)
 require_once get_stylesheet_directory() . "/inc/smtp-settings.php";
-
 /**
- * Tự động nạp Plugin iLynk SePay VietQR Payment Gateway (Phát triển bởi iLynk)
+ * Nạp Cấu hình & ACF Fields cho các trang Landing Page
  */
-$ilynk_sepay_plugin = dirname(dirname(get_stylesheet_directory())) . '/plugins/ilynk-sepay-vietqr/ilynk-sepay-vietqr.php';
-if (! defined('ILYNK_SEPAY_VERSION') && file_exists($ilynk_sepay_plugin)) {
-    require_once $ilynk_sepay_plugin;
-}
+require_once get_stylesheet_directory() . "/inc/acf-landing-pages.php";
+/**
+ * Nạp REST API Endpoints cho Landing Pages (/wp-json/thientam/v1/landing/{slug})
+ */
+require_once get_stylesheet_directory() . "/inc/api-landing-pages.php";
+
+
 
 /**
  * Hỗ trợ Thumbnail / Ảnh đại diện (Featured Image) & Excerpt cho Page và Post

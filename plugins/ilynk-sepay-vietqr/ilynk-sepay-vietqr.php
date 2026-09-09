@@ -158,8 +158,10 @@ function custom_sepay_render_native_settings_page()
         update_option('sepay_account_holder', sanitize_text_field($_POST['account_holder'] ?? ''));
         $prefix = strtoupper(preg_replace('/[^A-Za-z0-9]/', '', sanitize_text_field($_POST['payment_prefix'] ?? 'TT')));
         update_option('sepay_payment_prefix', $prefix ?: 'TT');
+        update_option('sepay_order_timeout', max(1, absint($_POST['order_timeout'] ?? 15)));
         update_option('sepay_webhook_key', sanitize_text_field($_POST['webhook_key'] ?? ''));
         update_option('sepay_frontend_url', esc_url_raw(trim($_POST['frontend_url'] ?? '')));
+        update_option('sepay_enabled', isset($_POST['is_enabled']) ? '1' : '0');
         update_option('sepay_is_sandbox', isset($_POST['is_sandbox']) ? '1' : '0');
         $saved = true;
     }
@@ -168,8 +170,10 @@ function custom_sepay_render_native_settings_page()
     $account_number = custom_sepay_get_setting('account_number', '');
     $account_holder = custom_sepay_get_setting('account_holder', 'PHONG THUY THIEN TAM');
     $payment_prefix = custom_sepay_get_setting('payment_prefix', 'TT');
+    $order_timeout  = (int) get_option('sepay_order_timeout', 15);
     $frontend_url   = custom_sepay_get_setting('frontend_url', 'https://thientam68.com');
     $webhook_key    = defined('SEPAY_WEBHOOK_KEY') && SEPAY_WEBHOOK_KEY !== '' ? SEPAY_WEBHOOK_KEY : get_option('sepay_webhook_key', '');
+    $is_enabled     = get_option('sepay_enabled', '1') === '1';
     $is_sandbox     = get_option('sepay_is_sandbox', '1') === '1';
 
     $webhook_url = rest_url('custom-sepay/v1/webhook');
@@ -329,6 +333,9 @@ function custom_sepay_render_native_settings_page()
                 </p>
             </div>
             <div style="display: flex; gap: 8px; align-items: center;">
+                <span style="background: <?php echo $is_enabled ? 'rgba(34, 197, 94, 0.2)' : 'rgba(239, 68, 68, 0.2)'; ?>; color: <?php echo $is_enabled ? '#4ade80' : '#f87171'; ?>; border: 1px solid <?php echo $is_enabled ? '#22c55e' : '#ef4444'; ?>; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600;">
+                    <?php echo $is_enabled ? '🟢 Đang Bật' : '🔴 Đang Tắt'; ?>
+                </span>
                 <span style="background: <?php echo $is_sandbox ? 'rgba(234, 88, 12, 0.2)' : 'rgba(34, 197, 94, 0.2)'; ?>; color: <?php echo $is_sandbox ? '#fb923c' : '#4ade80'; ?>; border: 1px solid <?php echo $is_sandbox ? '#ea580c' : '#22c55e'; ?>; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600;">
                     <?php echo $is_sandbox ? '🧪 Sandbox Mode' : '🚀 Live Production'; ?>
                 </span>
@@ -349,6 +356,19 @@ function custom_sepay_render_native_settings_page()
                 <?php wp_nonce_field('custom_sepay_save_action', 'custom_sepay_save_nonce'); ?>
 
                 <table class="form-table" role="presentation" style="margin-top: 0;">
+                    <tr>
+                        <th scope="row">Trạng thái Cổng thanh toán</th>
+                        <td>
+                            <label style="display: inline-flex; align-items: center; gap: 10px; cursor: pointer; user-select: none;">
+                                <input type="checkbox" name="is_enabled" value="1" <?php checked($is_enabled, true); ?> style="width: 18px; height: 18px; cursor: pointer;" />
+                                <span style="font-weight: 600; color: <?php echo $is_enabled ? '#16a34a' : '#dc2626'; ?>; font-size: 14px;">
+                                    <?php echo $is_enabled ? '🟢 Đang BẬT cổng thanh toán VietQR trên Website' : '🔴 Đang TẮT cổng thanh toán VietQR trên Website'; ?>
+                                </span>
+                            </label>
+                            <p class="description">Khi Tắt: Giao diện Website Next.js sẽ tự động ẩn tùy chọn quét mã VietQR và chỉ nhận thông tin tư vấn.</p>
+                        </td>
+                    </tr>
+
                     <tr>
                         <th scope="row">Chế độ Môi trường</th>
                         <td>
@@ -389,6 +409,17 @@ function custom_sepay_render_native_settings_page()
                         <td>
                             <input type="text" name="payment_prefix" value="<?php echo esc_attr($payment_prefix); ?>" style="text-transform: uppercase; font-weight: bold;" maxlength="10" required />
                             <p class="description">Tiền tố nhận diện mã đơn hàng khi chuyển khoản (Mặc định: <code>TT</code>, tạo mã như TT2130, TT2131...).</p>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <th scope="row">Thời gian hiệu lực (Timeout)</th>
+                        <td>
+                            <div style="display: flex; gap: 8px; align-items: center; max-width: 250px;">
+                                <input type="number" name="order_timeout" value="<?php echo esc_attr($order_timeout); ?>" min="1" max="1440" style="width: 100px; text-align: center; font-weight: bold;" required />
+                                <span style="font-weight: 600; color: #475569;">phút</span>
+                            </div>
+                            <p class="description">Thời gian tối đa để khách thanh toán VietQR (Mặc định: <code>15</code> phút). Quá thời hạn tính từ ngày tạo order trên WordPress, đơn sẽ tự động chuyển sang Hết hạn (Cancelled).</p>
                         </td>
                     </tr>
 
@@ -452,6 +483,56 @@ function custom_sepay_render_native_settings_page()
 }
 
 /**
+ * Kiểm tra và tự động chuyển trạng thái đơn hàng sang Hết hạn (Cancelled)
+ * Tính theo thời gian tạo thực tế của post type sepay_order trong WordPress
+ *
+ * @param int $order_id
+ * @param int|null $timeout_seconds Nếu null sẽ lấy theo cấu hình sepay_order_timeout (mặc định 15 phút)
+ * @return string Trạng thái đơn hàng sau kiểm tra
+ */
+function custom_sepay_check_order_expiration(int $order_id, ?int $timeout_seconds = null): string
+{
+    $status = (string) (get_post_meta($order_id, 'payment_status', true) ?: 'pending');
+
+    // Nếu đơn đã thanh toán hoặc thất bại thì không xử lý
+    if ($status !== 'pending') {
+        return $status;
+    }
+
+    if ($timeout_seconds === null) {
+        $timeout_minutes = (int) get_option('sepay_order_timeout', 15);
+        if ($timeout_minutes < 1) {
+            $timeout_minutes = 15;
+        }
+        $timeout_seconds = $timeout_minutes * 60;
+    }
+
+    $timeout_seconds = (int) apply_filters('custom_sepay_order_timeout', $timeout_seconds, $order_id);
+
+    // Lấy thời điểm tạo đơn theo Unix timestamp UTC của WordPress post
+    $created_timestamp = get_post_time('U', true, $order_id);
+    if (! $created_timestamp) {
+        $meta_created = get_post_meta($order_id, 'created_at', true);
+        if ($meta_created) {
+            $created_timestamp = strtotime($meta_created);
+        } else {
+            $created_timestamp = time();
+        }
+    }
+
+    $elapsed = time() - $created_timestamp;
+
+    if ($elapsed >= $timeout_seconds) {
+        $status = 'cancelled';
+        update_post_meta($order_id, 'payment_status', 'cancelled');
+        update_post_meta($order_id, 'cancelled_reason', 'timeout');
+        update_post_meta($order_id, 'cancelled_at', current_time('mysql'));
+    }
+
+    return $status;
+}
+
+/**
  * 3. Tùy chỉnh Cột hiển thị trong Danh sách Đơn hàng SePay
  */
 add_filter('manage_sepay_order_posts_columns', 'custom_sepay_order_columns');
@@ -511,14 +592,19 @@ function custom_sepay_order_column_content($column, $post_id)
 
         case 'payment_status':
             $status = get_post_meta($post_id, 'payment_status', true) ?: 'pending';
+            if ($status === 'pending') {
+                $status = custom_sepay_check_order_expiration($post_id);
+            }
             if ($status === 'paid') {
-                echo '<span style="background:#dcfce7;color:#15803d;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600;display:inline-block;">✓ Đã thanh toán</span>';
+                echo '<span style="color:#16a34a;font-weight:600;font-size:13px;display:inline-flex;align-items:center;gap:6px;"><span style="width:7px;height:7px;border-radius:50%;background:#16a34a;display:inline-block;"></span>Đã thanh toán</span>';
             } elseif ($status === 'failed') {
-                echo '<span style="background:#fee2e2;color:#b91c1c;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600;display:inline-block;">✕ Thất bại</span>';
+                echo '<span style="color:#dc2626;font-weight:600;font-size:13px;display:inline-flex;align-items:center;gap:6px;"><span style="width:7px;height:7px;border-radius:50%;background:#dc2626;display:inline-block;"></span>Thất bại</span>';
             } elseif ($status === 'cancelled') {
-                echo '<span style="background:#f1f5f9;color:#64748b;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600;display:inline-block;">Đã hủy</span>';
+                $reason = get_post_meta($post_id, 'cancelled_reason', true);
+                $label  = ($reason === 'timeout') ? 'Hết hạn' : 'Đã hủy';
+                echo '<span style="color:#dc2626;font-weight:600;font-size:13px;display:inline-flex;align-items:center;gap:6px;"><span style="width:7px;height:7px;border-radius:50%;background:#dc2626;display:inline-block;"></span>' . esc_html($label) . '</span>';
             } else {
-                echo '<span style="background:#fef3c7;color:#b45309;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600;display:inline-block;">⏳ Chờ thanh toán</span>';
+                echo '<span style="color:#d97706;font-weight:600;font-size:13px;display:inline-flex;align-items:center;gap:6px;"><span style="width:7px;height:7px;border-radius:50%;background:#d97706;display:inline-block;"></span>Chờ thanh toán</span>';
             }
             break;
 
@@ -529,9 +615,9 @@ function custom_sepay_order_column_content($column, $post_id)
                 $checkout_url = trailingslashit(custom_sepay_get_frontend_url()) . 'order/' . $token;
             }
             if (! empty($checkout_url)) {
-                echo '<a href="' . esc_url($checkout_url) . '" target="_blank" class="button button-small" style="font-size:11px; display:inline-flex; align-items:center; gap:3px;">🔗 Mở trang ↗</a>';
+                echo '<a href="' . esc_url($checkout_url) . '" target="_blank" style="color:#2271b1;font-size:13px;font-weight:500;">Mở trang ↗</a>';
             } else {
-                echo '<span style="color:#94a3b8;font-size:12px;">Chưa có link</span>';
+                echo '<span style="color:#94a3b8;font-size:13px;">—</span>';
             }
             break;
 
@@ -561,7 +647,7 @@ function custom_sepay_render_order_details_metabox($post)
     $post_id         = $post->ID;
     $payment_code    = get_post_meta($post_id, 'payment_code', true) ?: ('TT' . $post_id);
     $amount          = (int) get_post_meta($post_id, 'amount', true);
-    $payment_status  = get_post_meta($post_id, 'payment_status', true) ?: 'pending';
+    $payment_status  = custom_sepay_check_order_expiration($post_id);
     $customer_name   = get_post_meta($post_id, 'customer_name', true);
     $customer_phone  = get_post_meta($post_id, 'customer_phone', true);
     $customer_email  = get_post_meta($post_id, 'customer_email', true);
@@ -866,6 +952,7 @@ function custom_sepay_register_rest_routes()
  */
 function custom_sepay_get_public_config()
 {
+    $is_enabled     = (get_option('sepay_enabled', '1') === '1');
     $bank_name      = custom_sepay_get_setting('bank_name', 'MBBank');
     $account_number = custom_sepay_get_setting('account_number', '');
     $account_holder = custom_sepay_get_setting('account_holder', 'PHONG THUY THIEN TAM');
@@ -873,6 +960,7 @@ function custom_sepay_get_public_config()
 
     return new WP_REST_Response([
         'success'        => true,
+        'enabled'        => $is_enabled,
         'bank_name'      => $bank_name,
         'account_number' => $account_number,
         'account_holder' => $account_holder,
@@ -886,6 +974,10 @@ function custom_sepay_get_public_config()
  */
 function custom_sepay_create_order(WP_REST_Request $request)
 {
+    if (get_option('sepay_enabled', '1') !== '1') {
+        return new WP_Error('payment_disabled', 'Cổng thanh toán VietQR hiện đang tạm tắt. Quý khách vui lòng chọn hình thức Tư vấn trước.', ['status' => 403]);
+    }
+
     $params = $request->get_json_params();
     if (empty($params) || ! is_array($params)) {
         $params = $request->get_params();
@@ -965,6 +1057,9 @@ function custom_sepay_create_order(WP_REST_Request $request)
         'status'           => 'pending',
         'token'            => $public_token,
         'status_url'       => $status_url,
+        'timeout_seconds'   => (int) apply_filters('custom_sepay_order_timeout', ((int) get_option('sepay_order_timeout', 15)) * 60, $post_id),
+        'remaining_seconds' => (int) apply_filters('custom_sepay_order_timeout', ((int) get_option('sepay_order_timeout', 15)) * 60, $post_id),
+        'expires_at'        => date('Y-m-d H:i:s', time() + (int) apply_filters('custom_sepay_order_timeout', ((int) get_option('sepay_order_timeout', 15)) * 60, $post_id)),
         'bank_info'        => [
             'bank_name'      => custom_sepay_get_setting('bank_name', 'MBBank'),
             'account_number' => custom_sepay_get_setting('account_number', ''),
@@ -995,7 +1090,7 @@ function custom_sepay_get_order_status(WP_REST_Request $request)
     }
 
     $order_id = (int) $orders[0];
-    $status   = get_post_meta($order_id, 'payment_status', true) ?: 'pending';
+    $status   = custom_sepay_check_order_expiration($order_id);
     $code     = get_post_meta($order_id, 'payment_code', true);
     $paid_at  = get_post_meta($order_id, 'paid_at', true);
     $amount   = (int) get_post_meta($order_id, 'amount', true);
@@ -1013,6 +1108,13 @@ function custom_sepay_get_order_status(WP_REST_Request $request)
     if (empty($checkout_url)) {
         $checkout_url = trailingslashit(custom_sepay_get_frontend_url()) . 'order/' . $token;
     }
+
+    $timeout_minutes   = (int) get_option('sepay_order_timeout', 15);
+    $timeout_seconds   = (int) apply_filters('custom_sepay_order_timeout', $timeout_minutes * 60, $order_id);
+    $created_timestamp = get_post_time('U', true, $order_id) ?: strtotime($created_at);
+    $elapsed           = time() - $created_timestamp;
+    $remaining_seconds = max(0, $timeout_seconds - $elapsed);
+    $expires_at        = date('Y-m-d H:i:s', $created_timestamp + $timeout_seconds);
 
     // Header chống cache để phản hồi trạng thái mới nhất ngay lập tức
     header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
@@ -1034,6 +1136,9 @@ function custom_sepay_get_order_status(WP_REST_Request $request)
         'customer_notes'   => $customer_notes,
         'qr_url'           => custom_sepay_build_qr_url($amount, (string) $code),
         'checkout_url'     => $checkout_url,
+        'timeout_seconds'   => $timeout_seconds,
+        'remaining_seconds' => $remaining_seconds,
+        'expires_at'        => $expires_at,
         'bank_info'        => [
             'bank_name'      => custom_sepay_get_setting('bank_name', 'MBBank'),
             'account_number' => custom_sepay_get_setting('account_number', ''),

@@ -9,9 +9,7 @@
  */
 
 $site_url = 'https://thientam68.com';
-$logo_url = function_exists('get_stylesheet_directory_uri')
-    ? get_stylesheet_directory_uri() . '/images/Logo_Thien_Tam_Horizontal.png'
-    : 'https://site.thientam68.com/wp-content/themes/thien-tam-data/images/Logo_Thien_Tam_Horizontal.png';
+$logo_url = 'https://site.thientam68.com/wp-content/themes/thien-tam-data/images/Logo_Thien_Tam_Horizontal.png';
 ?>
 <!DOCTYPE html>
 <html lang="vi" xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
@@ -33,7 +31,8 @@ $logo_url = function_exists('get_stylesheet_directory_uri')
     </noscript>
     <![endif]-->
     <style>
-        html, body {
+        html,
+        body {
             margin: 0 !important;
             padding: 0 !important;
             height: 100% !important;
@@ -41,10 +40,13 @@ $logo_url = function_exists('get_stylesheet_directory_uri')
             -webkit-text-size-adjust: 100% !important;
             -ms-text-size-adjust: 100% !important;
         }
-        table, td {
+
+        table,
+        td {
             mso-table-lspace: 0pt !important;
             mso-table-rspace: 0pt !important;
         }
+
         img {
             -ms-interpolation-mode: bicubic;
             border: 0;
@@ -53,49 +55,61 @@ $logo_url = function_exists('get_stylesheet_directory_uri')
             outline: none;
             text-decoration: none;
         }
+
         /* Mobile Viewport Optimizations */
         @media only screen and (max-width: 600px) {
             .email-outer-td {
                 padding: 12px 6px !important;
             }
+
             .email-container {
                 width: 100% !important;
                 max-width: 100% !important;
                 border-radius: 14px !important;
             }
+
             .email-header-pad {
                 padding: 24px 15px 18px !important;
             }
+
             .email-title-pad {
                 padding: 18px 16px 14px !important;
             }
+
             .email-title-text {
                 font-size: 19px !important;
                 line-height: 1.35 !important;
             }
+
             .email-body-pad {
                 padding: 18px 16px 22px !important;
             }
+
             .email-footer-pad {
                 padding: 20px 16px !important;
             }
+
             .email-logo-img {
                 height: 42px !important;
                 max-width: 210px !important;
             }
+
             .responsive-table td {
                 display: block !important;
                 width: 100% !important;
                 box-sizing: border-box !important;
             }
+
             .responsive-table td.table-label {
                 padding-bottom: 4px !important;
                 border-bottom: none !important;
                 font-weight: 700 !important;
             }
+
             .responsive-table td.table-value {
                 padding-top: 0 !important;
             }
+
             .quick-action-btn {
                 display: block !important;
                 margin-top: 12px !important;
@@ -103,6 +117,7 @@ $logo_url = function_exists('get_stylesheet_directory_uri')
                 box-sizing: border-box !important;
                 text-align: center !important;
             }
+
             .action-btn-full {
                 display: block !important;
                 width: 100% !important;
@@ -124,7 +139,7 @@ $logo_url = function_exists('get_stylesheet_directory_uri')
                         <td align="center" class="email-header-pad" style="background-color: #FFFFFF; padding: 35px 25px 24px; text-align: center; border-bottom: 1px solid #E2E8F0;">
                             <table role="presentation" border="0" cellpadding="0" cellspacing="0" align="center" style="margin: 0 auto; text-align: center;">
                                 <tr>
-                                    <td align="center" style="text-align: center; padding-bottom: 10px;">
+                                    <td align="center" style="text-align: center;">
                                         <a href="<?php echo esc_url($site_url); ?>" target="_blank" style="text-decoration: none; display: inline-block; text-align: center;">
                                             <img src="<?php echo esc_url($logo_url); ?>" alt="Thiên Tâm" class="email-logo-img" style="height: 52px; width: auto; max-width: 260px; display: block; margin: 0 auto; border: 0;" />
                                         </a>
@@ -132,7 +147,7 @@ $logo_url = function_exists('get_stylesheet_directory_uri')
                                 </tr>
                                 <tr>
                                     <td align="center" style="text-align: center;">
-                                        <div style="display: inline-block; font-size: 11px; font-weight: 700; color: #854D0E; letter-spacing: 0.5px;">
+                                        <div style="display: inline-block; font-size: 11px; font-weight: 700; color: #854D0E;">
                                             Hiểu Mệnh – Hiểu Người – Hiểu Không Gian Sống
                                         </div>
                                     </td>
