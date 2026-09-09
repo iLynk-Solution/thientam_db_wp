@@ -106,3 +106,47 @@ add_filter( "template_include", function( $template ) {
     }
     return $template;
 }, 99 );
+
+/**
+ * Tắt hoàn toàn tính năng Bình luận (Comments) trên toàn bộ hệ thống WordPress
+ */
+// 1. Đóng comments và trackbacks ở frontend
+add_filter('comments_open', '__return_false', 20, 2);
+add_filter('pings_open', '__return_false', 20, 2);
+add_filter('comments_array', '__return_empty_array', 10, 2);
+
+// 2. Ẩn menu Bình luận (Comments) trong WP Admin
+add_action('admin_menu', function() {
+    remove_menu_page('edit-comments.php');
+});
+
+// 3. Chặn truy cập trực tiếp vào trang quản trị bình luận & gỡ support comments ở các post types
+add_action('admin_init', function() {
+    global $pagenow;
+    if ($pagenow === 'edit-comments.php') {
+        wp_safe_redirect(admin_url());
+        exit;
+    }
+    foreach (get_post_types() as $post_type) {
+        if (post_type_supports($post_type, 'comments')) {
+            remove_post_type_support($post_type, 'comments');
+            remove_post_type_support($post_type, 'trackbacks');
+        }
+    }
+});
+
+// 4. Xóa icon bình luận trên Admin Bar
+add_action('admin_bar_menu', function($wp_admin_bar) {
+    $wp_admin_bar->remove_node('comments');
+}, 999);
+
+// 5. Xóa widget Recent Comments ở Dashboard
+add_action('wp_dashboard_setup', function() {
+    remove_meta_box('dashboard_recent_comments', 'dashboard', 'normal');
+});
+
+// 6. Chặn gửi bình luận qua POST request
+add_action('pre_comment_on_post', function() {
+    wp_die('Bình luận đã bị vô hiệu hóa trên website Thiên Tâm.', '', array('response' => 403));
+});
+
