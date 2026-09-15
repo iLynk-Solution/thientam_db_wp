@@ -370,6 +370,38 @@ function thientam_render_smtp_settings_page()
                     </form>
                 </div>
 
+                <!-- Box Xem Trước Email Templates -->
+                <div style="background: #fff; border: 1px solid #ccd0d4; border-radius: 8px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                    <h3 style="margin-top: 0; font-size: 15px; display: flex; align-items: center; gap: 6px; color: #1d2327;">
+                        👁️ Xem Trước Các Mẫu Email
+                    </h3>
+                    <p style="font-size: 12px; color: #646970; margin-bottom: 12px;">
+                        Kiểm tra giao diện thực tế của các email tự động gửi cho khách hàng và quản trị viên:
+                    </p>
+                    <div style="display: flex; flex-direction: column; gap: 8px;">
+                        <a href="<?php echo esc_url(admin_url('admin-ajax.php?action=thientam_preview_email&template=payment-success')); ?>" target="_blank" class="button button-secondary" style="display: flex; align-items: center; justify-content: space-between; font-size: 12px; font-weight: 600; padding: 4px 10px; height: auto;">
+                            <span>🎉 Thanh toán thành công</span>
+                            <span style="color:#059669; font-size: 11px;">Xem ↗</span>
+                        </a>
+                        <a href="<?php echo esc_url(admin_url('admin-ajax.php?action=thientam_preview_email&template=payment-failed&reason=timeout')); ?>" target="_blank" class="button button-secondary" style="display: flex; align-items: center; justify-content: space-between; font-size: 12px; font-weight: 600; padding: 4px 10px; height: auto;">
+                            <span>⏱️ Thanh toán thất bại (Hết hạn)</span>
+                            <span style="color:#d97706; font-size: 11px;">Xem ↗</span>
+                        </a>
+                        <a href="<?php echo esc_url(admin_url('admin-ajax.php?action=thientam_preview_email&template=payment-failed&reason=site_disabled')); ?>" target="_blank" class="button button-secondary" style="display: flex; align-items: center; justify-content: space-between; font-size: 12px; font-weight: 600; padding: 4px 10px; height: auto;">
+                            <span>🔴 Thanh toán hủy (Site tắt thanh toán)</span>
+                            <span style="color:#dc2626; font-size: 11px;">Xem ↗</span>
+                        </a>
+                        <a href="<?php echo esc_url(admin_url('admin-ajax.php?action=thientam_preview_email&template=customer-confirmation')); ?>" target="_blank" class="button button-secondary" style="display: flex; align-items: center; justify-content: space-between; font-size: 12px; font-weight: 600; padding: 4px 10px; height: auto;">
+                            <span>💌 Thư cảm ơn khách gửi form</span>
+                            <span style="color:#0284c7; font-size: 11px;">Xem ↗</span>
+                        </a>
+                        <a href="<?php echo esc_url(admin_url('admin-ajax.php?action=thientam_preview_email&template=lead-notification')); ?>" target="_blank" class="button button-secondary" style="display: flex; align-items: center; justify-content: space-between; font-size: 12px; font-weight: 600; padding: 4px 10px; height: auto;">
+                            <span>🔔 Thông báo Lead mới cho Admin</span>
+                            <span style="color:#64748b; font-size: 11px;">Xem ↗</span>
+                        </a>
+                    </div>
+                </div>
+
                 <!-- Box Hướng dẫn Gmail -->
                 <div style="background: #f0f6fc; border: 1px solid #c8d8e8; border-radius: 8px; padding: 18px;">
                     <h4 style="margin-top: 0; font-size: 14px; color: #005a9c; display: flex; align-items: center; gap: 6px;">
@@ -402,7 +434,44 @@ function thientam_ajax_preview_email()
     $template = isset($_GET['template']) ? sanitize_key($_GET['template']) : 'lead-notification';
     header('Content-Type: text/html; charset=utf-8');
 
-    if ($template === 'customer-confirmation') {
+    if ($template === 'payment-success') {
+        echo thientam_render_email_template('payment-success', array(
+            'title'            => 'Xác Nhận Thanh Toán Thành Công',
+            'badge_text'       => 'THANH TOÁN THÀNH CÔNG',
+            'subtitle'         => 'Hệ thống VietQR Napas 24/7 đã tự động ghi nhận thanh toán của Quý khách.',
+            'customer_name'    => 'Nguyễn Văn An',
+            'customer_phone'   => '0935 425 238',
+            'customer_email'   => 'nguyenvanan@gmail.com',
+            'service_name'     => 'Hiểu Con Để Đồng Hành',
+            'package_name'     => 'Gói Đồng Hành Toàn Diện',
+            'payment_code'     => 'TT8866',
+            'amount_formatted' => '1.500.000đ',
+            'paid_at'          => date('d/m/Y H:i:s'),
+            'checkout_url'     => 'https://thientam68.com/order/demo-token-123',
+            'reference_code'   => 'MBVCB.992837192',
+            'transaction_id'   => 'TX9827364',
+            'customer_notes'   => 'Ngày sinh: 15/08/2012 | Giờ sinh: 09:30',
+        ));
+    } elseif ($template === 'payment-failed') {
+        $reason = isset($_GET['reason']) ? sanitize_key($_GET['reason']) : 'timeout';
+        $badge = ($reason === 'site_disabled') ? 'CỔNG THANH TOÁN TẠM ĐÓNG' : 'THANH TOÁN CHƯA HOÀN TẤT';
+        echo thientam_render_email_template('payment-failed', array(
+            'title'            => 'Thông Báo Trạng Thái Đơn Hàng',
+            'badge_text'       => $badge,
+            'subtitle'         => 'Yêu cầu thanh toán của đơn hàng chưa được hoàn tất hoặc đã kết thúc phiên.',
+            'customer_name'    => 'Nguyễn Văn An',
+            'customer_phone'   => '0935 425 238',
+            'customer_email'   => 'nguyenvanan@gmail.com',
+            'service_name'     => 'Hiểu Con Để Đồng Hành',
+            'package_name'     => 'Gói Cơ Bản',
+            'payment_code'     => 'TT8866',
+            'amount_formatted' => '1.000.000đ',
+            'created_at'       => date('d/m/Y H:i'),
+            'cancelled_reason' => $reason,
+            'checkout_url'     => 'https://thientam68.com/order/demo-token-123',
+            'customer_notes'   => 'Ngày sinh: 15/08/2012',
+        ));
+    } elseif ($template === 'customer-confirmation') {
         echo thientam_render_email_template('customer-confirmation', array(
             'title'            => 'Tiếp Nhận Yêu Cầu Thành Công',
             'badge_text'       => '',
@@ -542,3 +611,202 @@ function thientam_send_customer_confirmation_email($customer_name, $customer_ema
 
     return wp_mail($customer_email, $subject, $body);
 }
+
+/**
+ * 6. Gửi Email Xác Nhận Thanh Toán Thành Công Cho Khách Hàng & Admin
+ *
+ * @param int $order_id
+ * @param string $payment_code
+ * @param array $transaction_data
+ * @return bool
+ */
+function thientam_send_payment_success_email($order_id, $payment_code = '', $transaction_data = array())
+{
+    // Chống gửi lặp email
+    if (get_post_meta($order_id, '_sepay_success_email_sent', true) === '1') {
+        return false;
+    }
+
+    $customer_name    = (string) get_post_meta($order_id, 'customer_name', true);
+    $customer_email   = (string) get_post_meta($order_id, 'customer_email', true);
+    $customer_phone   = (string) get_post_meta($order_id, 'customer_phone', true);
+    $service_name     = (string) get_post_meta($order_id, 'service_name', true);
+    $package_name     = (string) get_post_meta($order_id, 'package_name', true);
+    $customer_notes   = (string) get_post_meta($order_id, 'customer_notes', true);
+    $amount           = (int) get_post_meta($order_id, 'amount', true);
+    $amount_formatted = number_format($amount, 0, ',', '.') . 'đ';
+    $paid_at          = (string) get_post_meta($order_id, 'paid_at', true) ?: current_time('d/m/Y H:i:s');
+    $checkout_url     = (string) get_post_meta($order_id, 'checkout_url', true);
+    $ref_code         = (string) get_post_meta($order_id, 'sepay_reference_code', true);
+    $tx_id            = (string) get_post_meta($order_id, 'sepay_transaction_id', true);
+    $order_source     = (string) get_post_meta($order_id, 'order_source', true);
+    $landing_slug     = (string) get_post_meta($order_id, 'landing_slug', true);
+
+    if (empty($order_source)) {
+        $lower_svc = mb_strtolower($service_name, 'UTF-8');
+        if (strpos($lower_svc, 'hiểu mình') !== false || strpos($lower_svc, 'hieu-minh') !== false) {
+            $order_source = 'landing';
+            $landing_slug = $landing_slug ?: 'hieu-minh';
+        } elseif (strpos($lower_svc, 'hiểu con') !== false || strpos($lower_svc, 'hieu-con') !== false) {
+            $order_source = 'landing';
+            $landing_slug = $landing_slug ?: 'hieu-con-de-dong-hanh';
+        } else {
+            $order_source = 'service';
+        }
+    }
+
+    if ($order_source === 'landing' && !empty($landing_slug) && strpos($checkout_url, 'slug=') === false) {
+        $checkout_url .= (strpos($checkout_url, '?') !== false ? '&' : '?') . 'from=landing&slug=' . $landing_slug;
+    }
+
+    if (empty($payment_code)) {
+        $payment_code = (string) get_post_meta($order_id, 'payment_code', true);
+    }
+
+    $site_name = get_bloginfo('name') ?: 'Thiên Tâm 68';
+    $subject   = '[' . $site_name . '] Xác nhận thanh toán thành công đơn hàng #' . $payment_code . ' (' . $amount_formatted . ')';
+
+    $template_data = array(
+        'title'            => 'Xác Nhận Thanh Toán Thành Công',
+        'badge_text'       => 'THANH TOÁN THÀNH CÔNG',
+        'subtitle'         => 'Hệ thống VietQR Napas 24/7 đã tự động ghi nhận thanh toán của Quý khách.',
+        'customer_name'    => $customer_name,
+        'customer_phone'   => $customer_phone,
+        'customer_email'   => $customer_email,
+        'service_name'     => $service_name,
+        'package_name'     => $package_name,
+        'payment_code'     => $payment_code,
+        'amount_formatted' => $amount_formatted,
+        'paid_at'          => $paid_at,
+        'checkout_url'     => $checkout_url,
+        'reference_code'   => $ref_code,
+        'transaction_id'   => $tx_id,
+        'customer_notes'   => $customer_notes,
+        'order_source'     => $order_source,
+        'landing_slug'     => $landing_slug,
+    );
+
+    $body = thientam_render_email_template('payment-success', $template_data);
+    if (empty($body)) {
+        return false;
+    }
+
+    $sent = false;
+    if (!empty($customer_email) && is_email($customer_email)) {
+        $sent = wp_mail($customer_email, $subject, $body);
+    }
+
+    // Gửi thông báo cho Admin/Tư vấn viên
+    $recipients_str = get_option('thientam_smtp_notification_emails', get_option('admin_email'));
+    if (!empty($recipients_str)) {
+        $raw_emails = array_map('trim', explode(',', $recipients_str));
+        $valid_emails = array_filter($raw_emails, 'is_email');
+        if (!empty($valid_emails)) {
+            $admin_subject = '[' . $site_name . '] [ĐÃ THANH TOÁN] ' . $customer_name . ' - #' . $payment_code . ' (' . $amount_formatted . ')';
+            wp_mail($valid_emails, $admin_subject, $body);
+        }
+    }
+
+    update_post_meta($order_id, '_sepay_success_email_sent', '1');
+    update_post_meta($order_id, '_sepay_success_email_sent_at', current_time('mysql'));
+
+    return $sent;
+}
+add_action('custom_sepay_order_paid', 'thientam_send_payment_success_email', 10, 3);
+add_action('ilynk_sepay_order_paid', 'thientam_send_payment_success_email', 10, 3);
+
+/**
+ * 7. Gửi Email Thông Báo Thanh Toán Chưa Hoàn Tất / Đã Hủy
+ *
+ * @param int $order_id
+ * @param string $reason ('timeout' | 'site_disabled' | etc.)
+ * @return bool
+ */
+function thientam_send_payment_failed_email($order_id, $reason = '')
+{
+    // Chống gửi lặp email
+    if (get_post_meta($order_id, '_sepay_cancel_email_sent', true) === '1') {
+        return false;
+    }
+
+    // Không gửi nếu đơn này đã được thanh toán
+    if (get_post_meta($order_id, 'payment_status', true) === 'paid') {
+        return false;
+    }
+
+    $customer_name    = (string) get_post_meta($order_id, 'customer_name', true);
+    $customer_email   = (string) get_post_meta($order_id, 'customer_email', true);
+    $customer_phone   = (string) get_post_meta($order_id, 'customer_phone', true);
+    $service_name     = (string) get_post_meta($order_id, 'service_name', true);
+    $package_name     = (string) get_post_meta($order_id, 'package_name', true);
+    $customer_notes   = (string) get_post_meta($order_id, 'customer_notes', true);
+    $amount           = (int) get_post_meta($order_id, 'amount', true);
+    $amount_formatted = number_format($amount, 0, ',', '.') . 'đ';
+    $created_at       = (string) get_post_meta($order_id, 'created_at', true) ?: current_time('d/m/Y H:i');
+    $checkout_url     = (string) get_post_meta($order_id, 'checkout_url', true);
+    $payment_code     = (string) get_post_meta($order_id, 'payment_code', true);
+    $order_source     = (string) get_post_meta($order_id, 'order_source', true);
+    $landing_slug     = (string) get_post_meta($order_id, 'landing_slug', true);
+
+    if (empty($order_source)) {
+        $lower_svc = mb_strtolower($service_name, 'UTF-8');
+        if (strpos($lower_svc, 'hiểu mình') !== false || strpos($lower_svc, 'hieu-minh') !== false) {
+            $order_source = 'landing';
+            $landing_slug = $landing_slug ?: 'hieu-minh';
+        } elseif (strpos($lower_svc, 'hiểu con') !== false || strpos($lower_svc, 'hieu-con') !== false) {
+            $order_source = 'landing';
+            $landing_slug = $landing_slug ?: 'hieu-con-de-dong-hanh';
+        } else {
+            $order_source = 'service';
+        }
+    }
+
+    if ($order_source === 'landing' && !empty($landing_slug) && strpos($checkout_url, 'slug=') === false) {
+        $checkout_url .= (strpos($checkout_url, '?') !== false ? '&' : '?') . 'from=landing&slug=' . $landing_slug;
+    }
+
+    if (empty($reason)) {
+        $reason = (string) get_post_meta($order_id, 'cancelled_reason', true);
+    }
+
+    if (empty($customer_email) || !is_email($customer_email)) {
+        return false;
+    }
+
+    $site_name  = get_bloginfo('name') ?: 'Thiên Tâm 68';
+    $badge_text = ($reason === 'site_disabled') ? 'CỔNG THANH TOÁN TẠM ĐÓNG' : 'THANH TOÁN CHƯA HOÀN TẤT';
+    $subject    = '[' . $site_name . '] Thông báo trạng thái đơn hàng #' . $payment_code;
+
+    $template_data = array(
+        'title'            => 'Thông Báo Trạng Thái Đơn Hàng',
+        'badge_text'       => $badge_text,
+        'subtitle'         => 'Yêu cầu thanh toán của đơn hàng chưa được hoàn tất hoặc đã kết thúc phiên.',
+        'customer_name'    => $customer_name,
+        'customer_phone'   => $customer_phone,
+        'customer_email'   => $customer_email,
+        'service_name'     => $service_name,
+        'package_name'     => $package_name,
+        'payment_code'     => $payment_code,
+        'amount_formatted' => $amount_formatted,
+        'created_at'       => $created_at,
+        'cancelled_reason' => $reason,
+        'checkout_url'     => $checkout_url,
+        'customer_notes'   => $customer_notes,
+        'order_source'     => $order_source,
+        'landing_slug'     => $landing_slug,
+    );
+
+    $body = thientam_render_email_template('payment-failed', $template_data);
+    if (empty($body)) {
+        return false;
+    }
+
+    $sent = wp_mail($customer_email, $subject, $body);
+
+    update_post_meta($order_id, '_sepay_cancel_email_sent', '1');
+    update_post_meta($order_id, '_sepay_cancel_email_sent_at', current_time('mysql'));
+
+    return $sent;
+}
+add_action('custom_sepay_order_cancelled', 'thientam_send_payment_failed_email', 10, 2);
+add_action('ilynk_sepay_order_cancelled', 'thientam_send_payment_failed_email', 10, 2);

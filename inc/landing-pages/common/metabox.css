@@ -82,7 +82,7 @@
     }
 
     .tt-tab-pane.active {
-        display: block;
+        display: block !important;
     }
 
     .tt-field-row {
@@ -574,4 +574,205 @@
 
 .tt-faq-btn-toggle-all:hover {
     color: #0369a1;
+}
+
+/* Doors Accordion UI */
+.tt-door-accordion-item {
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    overflow: hidden;
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+.tt-door-accordion-item:hover {
+    border-color: #94a3b8;
+}
+.tt-door-accordion-item.is-open {
+    border-color: #0f3d61;
+    box-shadow: 0 2px 8px rgba(15, 61, 97, 0.08);
+}
+.tt-door-accordion-header {
+    background: #f8fafc;
+    padding: 11px 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    user-select: none;
+    border-bottom: 1px solid transparent;
+    transition: background 0.15s ease;
+}
+.tt-door-accordion-header:hover {
+    background: #f1f5f9;
+}
+.tt-door-accordion-item.is-open .tt-door-accordion-header {
+    background: #f0f7fc;
+    border-bottom-color: #e2e8f0;
+}
+.tt-door-header-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+    min-width: 0;
+}
+.tt-door-toggle-icon {
+    font-size: 13px;
+    color: #64748b;
+    width: 14px;
+    height: 14px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s ease;
+    flex-shrink: 0;
+}
+.tt-door-accordion-item.is-open .tt-door-toggle-icon {
+    transform: rotate(90deg);
+    color: #0f3d61;
+}
+.tt-door-badge {
+    background: #0f3d61;
+    color: #ffffff;
+    font-size: 11px;
+    padding: 3px 9px;
+    border-radius: 9999px;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+.tt-door-title-preview {
+    font-size: 13px;
+    font-weight: 600;
+    color: #1e293b;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    padding-right: 12px;
+}
+.tt-door-accordion-body {
+    display: none;
+    padding: 16px;
+    background: #ffffff;
+}
+.tt-door-accordion-item.is-open .tt-door-accordion-body {
+    display: block;
+}
+.tt-door-actions-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+}
+.tt-door-btn-toggle-all {
+    background: none;
+    border: none;
+    color: #0284c7;
+    cursor: pointer;
+    padding: 0;
+    font-size: 12px;
+    text-decoration: underline;
+}
+.tt-door-btn-toggle-all:hover {
+    color: #0369a1;
+}
+
+/* ================= PACKAGES / SERVICE ITEMS COLLAPSE & EXPAND ================= */
+.tt-package-card-row {
+    border: 1px solid #cbd5e1 !important;
+    border-radius: 8px !important;
+    margin-bottom: 14px !important;
+    background: #f8fafc !important;
+    overflow: hidden !important;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease !important;
+}
+
+.tt-package-card-row:hover {
+    border-color: #94a3b8 !important;
+    box-shadow: 0 2px 8px rgba(15, 61, 97, 0.07) !important;
+}
+
+.tt-package-card-header {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    padding: 12px 16px !important;
+    background: #f1f5f9 !important;
+    border-bottom: 1px solid #cbd5e1 !important;
+    cursor: pointer !important;
+    user-select: none !important;
+    transition: background 0.15s ease !important;
+}
+
+.tt-package-card-header:hover {
+    background: #e2e8f0 !important;
+}
+
+.tt-package-card-row.is-collapsed .tt-package-card-header {
+    border-bottom: none !important;
+}
+
+.tt-pkg-toggle-icon {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 22px !important;
+    height: 22px !important;
+    border-radius: 4px !important;
+    background: #e2e8f0 !important;
+    color: #475569 !important;
+    transition: transform 0.2s ease !important;
+    flex-shrink: 0 !important;
+}
+
+.tt-package-card-row.is-collapsed .tt-pkg-toggle-icon {
+    transform: rotate(180deg) !important;
+}
+
+.tt-package-card-row.is-collapsed .tt-package-card-body {
+    display: none;
+}
+
+.tt-package-card-body {
+    padding: 16px !important;
+    background: #ffffff !important;
+}
+
+.pkg-title-preview {
+    font-weight: 600 !important;
+    color: #1e293b !important;
+    font-size: 13px !important;
+}
+
+.pkg-price-preview {
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    color: #0369a1 !important;
+    background: #e0f2fe !important;
+    padding: 2px 8px !important;
+    border-radius: 12px !important;
+}
+
+.pkg-featured-badge {
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    color: #b45309 !important;
+    background: #fef3c7 !important;
+    padding: 2px 8px !important;
+    border-radius: 12px !important;
+}
+
+.tt-btn-toggle-package {
+    cursor: pointer !important;
+}
+
+.tt-packages-empty-notice {
+    background: #f8fafc !important;
+    border: 2px dashed #cbd5e1 !important;
+    border-radius: 8px !important;
+    padding: 32px 20px !important;
+    text-align: center !important;
+    color: #64748b !important;
+    margin-bottom: 16px !important;
 }

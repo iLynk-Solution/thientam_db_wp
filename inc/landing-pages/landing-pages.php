@@ -175,6 +175,9 @@ function thientam_save_landing_orchestrator_metabox_data($post_id, $post)
     if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) {
         return;
     }
+    if (wp_is_post_autosave($post_id) || wp_is_post_revision($post_id)) {
+        return;
+    }
     if (! current_user_can('edit_page', $post_id)) {
         return;
     }

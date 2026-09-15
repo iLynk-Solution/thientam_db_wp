@@ -113,6 +113,28 @@ add_action('admin_menu', function () {
     );
 });
 
+// Tự động kiểm tra và hủy các đơn hàng pending khi cổng thanh toán trên website bị tắt
+add_action('admin_init', function () {
+    if (get_option('sepay_enabled', '1') !== '1') {
+        $pending_orders = get_posts([
+            'post_type'      => 'sepay_order',
+            'post_status'    => 'publish',
+            'posts_per_page' => -1,
+            'fields'         => 'ids',
+            'meta_key'       => 'payment_status',
+            'meta_value'     => 'pending',
+        ]);
+        if (!empty($pending_orders)) {
+            foreach ($pending_orders as $p_id) {
+                update_post_meta($p_id, 'payment_status', 'cancelled');
+                update_post_meta($p_id, 'cancelled_reason', 'site_disabled');
+                update_post_meta($p_id, 'cancelled_at', current_time('mysql'));
+                do_action('custom_sepay_order_cancelled', $p_id, 'site_disabled');
+            }
+        }
+    }
+});
+
 function custom_sepay_get_setting(string $key, string $default = ''): string
 {
     // Ưu tiên đọc từ ACF option nếu có
@@ -161,8 +183,26 @@ function custom_sepay_render_native_settings_page()
         update_option('sepay_order_timeout', max(1, absint($_POST['order_timeout'] ?? 15)));
         update_option('sepay_webhook_key', sanitize_text_field($_POST['webhook_key'] ?? ''));
         update_option('sepay_frontend_url', esc_url_raw(trim($_POST['frontend_url'] ?? '')));
-        update_option('sepay_enabled', isset($_POST['is_enabled']) ? '1' : '0');
+        $new_enabled = isset($_POST['is_enabled']) ? '1' : '0';
+        update_option('sepay_enabled', $new_enabled);
         update_option('sepay_is_sandbox', isset($_POST['is_sandbox']) ? '1' : '0');
+        if ($new_enabled === '0') {
+            // Tự động hủy tất cả đơn hàng đang chờ thanh toán khi admin tắt cổng thanh toán trên website
+            $pending_orders = get_posts([
+                'post_type'      => 'sepay_order',
+                'post_status'    => 'publish',
+                'posts_per_page' => -1,
+                'fields'         => 'ids',
+                'meta_key'       => 'payment_status',
+                'meta_value'     => 'pending',
+            ]);
+            foreach ($pending_orders as $p_id) {
+                update_post_meta($p_id, 'payment_status', 'cancelled');
+                update_post_meta($p_id, 'cancelled_reason', 'site_disabled');
+                update_post_meta($p_id, 'cancelled_at', current_time('mysql'));
+                do_action('custom_sepay_order_cancelled', $p_id, 'site_disabled');
+            }
+        }
         $saved = true;
     }
 
@@ -499,6 +539,16 @@ function custom_sepay_check_order_expiration(int $order_id, ?int $timeout_second
         return $status;
     }
 
+    // Nếu cổng thanh toán trên Website đã tắt -> tự động hủy đơn với lý do site tắt thanh toán
+    if (get_option('sepay_enabled', '1') !== '1') {
+        $status = 'cancelled';
+        update_post_meta($order_id, 'payment_status', 'cancelled');
+        update_post_meta($order_id, 'cancelled_reason', 'site_disabled');
+        update_post_meta($order_id, 'cancelled_at', current_time('mysql'));
+        do_action('custom_sepay_order_cancelled', $order_id, 'site_disabled');
+        return $status;
+    }
+
     if ($timeout_seconds === null) {
         $timeout_minutes = (int) get_option('sepay_order_timeout', 15);
         if ($timeout_minutes < 1) {
@@ -527,6 +577,7 @@ function custom_sepay_check_order_expiration(int $order_id, ?int $timeout_second
         update_post_meta($order_id, 'payment_status', 'cancelled');
         update_post_meta($order_id, 'cancelled_reason', 'timeout');
         update_post_meta($order_id, 'cancelled_at', current_time('mysql'));
+        do_action('custom_sepay_order_cancelled', $order_id, 'timeout');
     }
 
     return $status;
@@ -542,6 +593,7 @@ function custom_sepay_order_columns($columns)
     $new_cols['cb']             = $columns['cb'] ?? '<input type="checkbox" />';
     $new_cols['payment_code']   = 'Mã thanh toán';
     $new_cols['customer']       = 'Khách hàng';
+    $new_cols['order_source']   = 'Nguồn tạo';
     $new_cols['service']        = 'Dịch vụ / Gói';
     $new_cols['amount']         = 'Số tiền';
     $new_cols['payment_status'] = 'Trạng thái';
@@ -576,6 +628,32 @@ function custom_sepay_order_column_content($column, $post_id)
             echo '</div>';
             break;
 
+        case 'order_source':
+            $source  = get_post_meta($post_id, 'order_source', true);
+            $slug    = get_post_meta($post_id, 'landing_slug', true);
+            $service = get_post_meta($post_id, 'service_name', true);
+
+            if (empty($source)) {
+                $lower = mb_strtolower((string)$service, 'UTF-8');
+                if (strpos($lower, 'hiểu mình') !== false || strpos($lower, 'hieu-minh') !== false) {
+                    $source = 'landing';
+                    $slug   = $slug ?: 'hieu-minh';
+                } elseif (strpos($lower, 'hiểu con') !== false || strpos($lower, 'hieu-con') !== false) {
+                    $source = 'landing';
+                    $slug   = $slug ?: 'hieu-con-de-dong-hanh';
+                } else {
+                    $source = 'service';
+                }
+            }
+
+            if ($source === 'landing') {
+                $name = ($slug === 'hieu-minh') ? 'Hiểu Mình' : (($slug === 'hieu-con-de-dong-hanh') ? 'Hiểu Con' : $slug);
+                echo '<span style="display:inline-block;padding:3px 8px;background:#fdf2f8;color:#be185d;border:1px solid #fbcfe8;border-radius:6px;font-size:11px;font-weight:700;">🚀 Landing: ' . esc_html($name) . '</span>';
+            } else {
+                echo '<span style="display:inline-block;padding:3px 8px;background:#f0f9ff;color:#0369a1;border:1px solid #bae6fd;border-radius:6px;font-size:11px;font-weight:600;">🌐 Trang thường</span>';
+            }
+            break;
+
         case 'service':
             $service = get_post_meta($post_id, 'service_name', true);
             $package = get_post_meta($post_id, 'package_name', true);
@@ -601,7 +679,13 @@ function custom_sepay_order_column_content($column, $post_id)
                 echo '<span style="color:#dc2626;font-weight:600;font-size:13px;display:inline-flex;align-items:center;gap:6px;"><span style="width:7px;height:7px;border-radius:50%;background:#dc2626;display:inline-block;"></span>Thất bại</span>';
             } elseif ($status === 'cancelled') {
                 $reason = get_post_meta($post_id, 'cancelled_reason', true);
-                $label  = ($reason === 'timeout') ? 'Hết hạn' : 'Đã hủy';
+                if ($reason === 'site_disabled') {
+                    $label = 'Tắt thanh toán';
+                } elseif ($reason === 'timeout') {
+                    $label = 'Hết hạn';
+                } else {
+                    $label = 'Đã hủy';
+                }
                 echo '<span style="color:#dc2626;font-weight:600;font-size:13px;display:inline-flex;align-items:center;gap:6px;"><span style="width:7px;height:7px;border-radius:50%;background:#dc2626;display:inline-block;"></span>' . esc_html($label) . '</span>';
             } else {
                 echo '<span style="color:#d97706;font-weight:600;font-size:13px;display:inline-flex;align-items:center;gap:6px;"><span style="width:7px;height:7px;border-radius:50%;background:#d97706;display:inline-block;"></span>Chờ thanh toán</span>';
@@ -611,8 +695,38 @@ function custom_sepay_order_column_content($column, $post_id)
         case 'checkout_page':
             $token        = get_post_meta($post_id, '_sepay_public_token', true);
             $checkout_url = get_post_meta($post_id, 'checkout_url', true);
+            $slug         = get_post_meta($post_id, 'landing_slug', true);
+            $source       = get_post_meta($post_id, 'order_source', true);
+            $service      = get_post_meta($post_id, 'service_name', true);
+
+            if (empty($source)) {
+                $lower = mb_strtolower((string)$service, 'UTF-8');
+                if (strpos($lower, 'hiểu mình') !== false) {
+                    $source = 'landing';
+                    $slug   = $slug ?: 'hieu-minh';
+                } elseif (strpos($lower, 'hiểu con') !== false) {
+                    $source = 'landing';
+                    $slug   = $slug ?: 'hieu-con-de-dong-hanh';
+                }
+            }
+
             if (empty($checkout_url) && ! empty($token)) {
-                $checkout_url = trailingslashit(custom_sepay_get_frontend_url()) . 'order/' . $token;
+                $frontend_base = custom_sepay_get_frontend_url();
+                if ($source === 'landing' && !empty($slug)) {
+                    $checkout_url = trailingslashit($frontend_base) . 'order/' . $token . '?from=landing&slug=' . $slug;
+                } else {
+                    $checkout_url = trailingslashit($frontend_base) . 'order/' . $token;
+                }
+            } elseif ($source === 'landing' && !empty($slug) && strpos($checkout_url, 'slug=') === false) {
+                $checkout_url .= (strpos($checkout_url, '?') !== false ? '&' : '?') . 'from=landing&slug=' . $slug;
+            }
+
+            if (!metadata_exists('post', $post_id, 'order_source') || empty(get_post_meta($post_id, 'order_source', true))) {
+                update_post_meta($post_id, 'order_source', $source);
+                if (!empty($slug)) {
+                    update_post_meta($post_id, 'landing_slug', $slug);
+                }
+                update_post_meta($post_id, 'checkout_url', $checkout_url);
             }
             if (! empty($checkout_url)) {
                 echo '<a href="' . esc_url($checkout_url) . '" target="_blank" style="color:#2271b1;font-size:13px;font-weight:500;">Mở trang ↗</a>';
@@ -660,8 +774,39 @@ function custom_sepay_render_order_details_metabox($post)
     $ref_code        = get_post_meta($post_id, 'sepay_reference_code', true);
     $webhook_history = get_post_meta($post_id, 'sepay_webhook_history', true);
     $checkout_url    = get_post_meta($post_id, 'checkout_url', true);
+    $order_source    = get_post_meta($post_id, 'order_source', true);
+    $landing_slug    = get_post_meta($post_id, 'landing_slug', true);
+
+    if (empty($order_source)) {
+        $lower = mb_strtolower((string)$service_name, 'UTF-8');
+        if (strpos($lower, 'hiểu mình') !== false || strpos($lower, 'hieu-minh') !== false) {
+            $order_source = 'landing';
+            $landing_slug = $landing_slug ?: 'hieu-minh';
+        } elseif (strpos($lower, 'hiểu con') !== false || strpos($lower, 'hieu-con') !== false) {
+            $order_source = 'landing';
+            $landing_slug = $landing_slug ?: 'hieu-con-de-dong-hanh';
+        } else {
+            $order_source = 'service';
+        }
+    }
+
     if (empty($checkout_url) && ! empty($public_token)) {
-        $checkout_url = trailingslashit(custom_sepay_get_frontend_url()) . 'order/' . $public_token;
+        $frontend_base = custom_sepay_get_frontend_url();
+        if ($order_source === 'landing' && !empty($landing_slug)) {
+            $checkout_url = trailingslashit($frontend_base) . 'order/' . $public_token . '?from=landing&slug=' . $landing_slug;
+        } else {
+            $checkout_url = trailingslashit($frontend_base) . 'order/' . $public_token;
+        }
+    } elseif ($order_source === 'landing' && !empty($landing_slug) && strpos($checkout_url, 'slug=') === false) {
+        $checkout_url .= (strpos($checkout_url, '?') !== false ? '&' : '?') . 'from=landing&slug=' . $landing_slug;
+    }
+
+    if (!metadata_exists('post', $post_id, 'order_source') || empty(get_post_meta($post_id, 'order_source', true))) {
+        update_post_meta($post_id, 'order_source', $order_source);
+        if (!empty($landing_slug)) {
+            update_post_meta($post_id, 'landing_slug', $landing_slug);
+        }
+        update_post_meta($post_id, 'checkout_url', $checkout_url);
     }
 
     $qr_url = custom_sepay_build_qr_url($amount, $payment_code);
@@ -696,6 +841,20 @@ function custom_sepay_render_order_details_metabox($post)
             <div style="flex: 1; min-width: 280px;">
                 <table class="form-table" style="margin: 0;">
                     <tr>
+                        <th style="width: 140px; padding: 10px 0;">Nguồn tạo đơn:</th>
+                        <td style="padding: 10px 0;">
+                            <?php if ($order_source === 'landing'): ?>
+                                <span style="display:inline-block;padding:4px 10px;background:#fdf2f8;color:#be185d;border:1px solid #fbcfe8;border-radius:6px;font-size:12px;font-weight:700;">
+                                    🚀 Landing Page (<?php echo esc_html($landing_slug === 'hieu-minh' ? 'Hiểu Mình Để Định Hướng' : ($landing_slug === 'hieu-con-de-dong-hanh' ? 'Hiểu Con Để Đồng Hành' : $landing_slug)); ?>)
+                                </span>
+                            <?php else: ?>
+                                <span style="display:inline-block;padding:4px 10px;background:#f0f9ff;color:#0369a1;border:1px solid #bae6fd;border-radius:6px;font-size:12px;font-weight:600;">
+                                    🌐 Trang dịch vụ thông thường
+                                </span>
+                            <?php endif; ?>
+                        </td>
+                    </tr>
+                    <tr>
                         <th style="width: 140px; padding: 10px 0;">Mã thanh toán:</th>
                         <td style="padding: 10px 0;">
                             <input type="text" name="sepay_payment_code" value="<?php echo esc_attr($payment_code); ?>" class="regular-text" style="font-weight: bold; color: #b45309;" />
@@ -720,6 +879,17 @@ function custom_sepay_render_order_details_metabox($post)
                             </select>
                             <?php if ($paid_at): ?>
                                 <span style="display: block; font-size: 12px; color: #15803d; margin-top: 4px;">Thời gian thanh toán: <?php echo esc_html($paid_at); ?></span>
+                            <?php elseif ($payment_status === 'cancelled'): ?>
+                                <?php
+                                $c_reason = get_post_meta($post_id, 'cancelled_reason', true);
+                                $c_at     = get_post_meta($post_id, 'cancelled_at', true);
+                                $reason_text = ($c_reason === 'site_disabled')
+                                    ? 'Đã hủy tự động do Website tắt cổng thanh toán VietQR'
+                                    : (($c_reason === 'timeout') ? 'Đã hủy tự động do hết hạn 15 phút' : 'Đã hủy');
+                                ?>
+                                <span style="display: block; font-size: 12px; color: #dc2626; font-weight: 600; margin-top: 4px;">
+                                    ⚠️ <?php echo esc_html($reason_text); ?> <?php echo $c_at ? '(' . esc_html($c_at) . ')' : ''; ?>
+                                </span>
                             <?php endif; ?>
                         </td>
                     </tr>
@@ -1003,6 +1173,22 @@ function custom_sepay_create_order(WP_REST_Request $request)
     $prefix = strtoupper(preg_replace('/[^A-Za-z0-9]/', '', custom_sepay_get_setting('payment_prefix', 'TT')));
     $prefix = $prefix !== '' ? $prefix : 'TT';
 
+    $order_source = sanitize_text_field((string) ($params['order_source'] ?? ''));
+    $landing_slug = sanitize_text_field((string) ($params['landing_slug'] ?? ''));
+
+    if (empty($order_source)) {
+        $lower_svc = mb_strtolower($service_name, 'UTF-8');
+        if (strpos($lower_svc, 'hiểu mình') !== false || strpos($lower_svc, 'hieu-minh') !== false) {
+            $order_source = 'landing';
+            $landing_slug = 'hieu-minh';
+        } elseif (strpos($lower_svc, 'hiểu con') !== false || strpos($lower_svc, 'hieu-con') !== false) {
+            $order_source = 'landing';
+            $landing_slug = 'hieu-con-de-dong-hanh';
+        } else {
+            $order_source = 'service';
+        }
+    }
+
     // Tạo đơn nháp trước để nhận Post ID
     $post_id = wp_insert_post([
         'post_type'   => 'sepay_order',
@@ -1027,7 +1213,11 @@ function custom_sepay_create_order(WP_REST_Request $request)
 
     // Tạo Checkout URL độc lập cho Next.js Frontend
     $frontend_base = custom_sepay_get_frontend_url();
-    $checkout_url  = trailingslashit($frontend_base) . 'order/' . $public_token;
+    if ($order_source === 'landing' && !empty($landing_slug)) {
+        $checkout_url = trailingslashit($frontend_base) . 'order/' . $public_token . '?from=landing&slug=' . $landing_slug;
+    } else {
+        $checkout_url = trailingslashit($frontend_base) . 'order/' . $public_token;
+    }
 
     // Lưu trữ metadata
     update_post_meta($post_id, 'payment_code', $payment_code);
@@ -1040,6 +1230,8 @@ function custom_sepay_create_order(WP_REST_Request $request)
     update_post_meta($post_id, 'package_name', $package_name);
     update_post_meta($post_id, 'customer_notes', $customer_notes);
     update_post_meta($post_id, '_sepay_public_token', $public_token);
+    update_post_meta($post_id, 'order_source', $order_source);
+    update_post_meta($post_id, 'landing_slug', $landing_slug);
     update_post_meta($post_id, 'checkout_url', $checkout_url);
     update_post_meta($post_id, 'created_at', current_time('mysql'));
 
@@ -1105,8 +1297,39 @@ function custom_sepay_get_order_status(WP_REST_Request $request)
     $ref_code        = (string) get_post_meta($order_id, 'sepay_reference_code', true);
     $created_at      = (string) get_post_meta($order_id, 'created_at', true) ?: get_the_date('Y-m-d H:i:s', $order_id);
     $checkout_url    = (string) get_post_meta($order_id, 'checkout_url', true);
+    $order_source    = (string) get_post_meta($order_id, 'order_source', true);
+    $landing_slug    = (string) get_post_meta($order_id, 'landing_slug', true);
+
+    if (empty($order_source)) {
+        $lower_svc = mb_strtolower($service_name, 'UTF-8');
+        if (strpos($lower_svc, 'hiểu mình') !== false || strpos($lower_svc, 'hieu-minh') !== false) {
+            $order_source = 'landing';
+            $landing_slug = $landing_slug ?: 'hieu-minh';
+        } elseif (strpos($lower_svc, 'hiểu con') !== false || strpos($lower_svc, 'hieu-con') !== false) {
+            $order_source = 'landing';
+            $landing_slug = $landing_slug ?: 'hieu-con-de-dong-hanh';
+        } else {
+            $order_source = 'service';
+        }
+    }
+
     if (empty($checkout_url)) {
-        $checkout_url = trailingslashit(custom_sepay_get_frontend_url()) . 'order/' . $token;
+        $frontend_base = custom_sepay_get_frontend_url();
+        if ($order_source === 'landing' && !empty($landing_slug)) {
+            $checkout_url = trailingslashit($frontend_base) . 'order/' . $token . '?from=landing&slug=' . $landing_slug;
+        } else {
+            $checkout_url = trailingslashit($frontend_base) . 'order/' . $token;
+        }
+    } elseif ($order_source === 'landing' && !empty($landing_slug) && strpos($checkout_url, 'slug=') === false) {
+        $checkout_url = trailingslashit(custom_sepay_get_frontend_url()) . 'order/' . $token . '?from=landing&slug=' . $landing_slug;
+    }
+
+    if (!metadata_exists('post', $order_id, 'order_source') || empty(get_post_meta($order_id, 'order_source', true))) {
+        update_post_meta($order_id, 'order_source', $order_source);
+        if (!empty($landing_slug)) {
+            update_post_meta($order_id, 'landing_slug', $landing_slug);
+        }
+        update_post_meta($order_id, 'checkout_url', $checkout_url);
     }
 
     $timeout_minutes   = (int) get_option('sepay_order_timeout', 15);
@@ -1125,6 +1348,8 @@ function custom_sepay_get_order_status(WP_REST_Request $request)
         'order_id'         => $order_id,
         'payment_code'     => (string) $code,
         'status'           => (string) $status,
+        'cancelled_reason' => (string) get_post_meta($order_id, 'cancelled_reason', true),
+        'cancelled_at'     => (string) get_post_meta($order_id, 'cancelled_at', true),
         'paid_at'          => (string) $paid_at,
         'amount'           => $amount,
         'amount_formatted' => number_format($amount, 0, ',', '.') . 'đ',
@@ -1134,6 +1359,8 @@ function custom_sepay_get_order_status(WP_REST_Request $request)
         'service_name'     => $service_name,
         'package_name'     => $package_name,
         'customer_notes'   => $customer_notes,
+        'order_source'     => (string) $order_source,
+        'landing_slug'     => (string) $landing_slug,
         'qr_url'           => custom_sepay_build_qr_url($amount, (string) $code),
         'checkout_url'     => $checkout_url,
         'timeout_seconds'   => $timeout_seconds,
