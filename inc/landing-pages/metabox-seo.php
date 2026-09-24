@@ -15,6 +15,7 @@ if (! defined('ABSPATH')) {
 $meta_title        = $get_val('landing_meta_title', $defaults['meta']['title'] ?? '');
 $meta_description  = $get_val('landing_meta_description', $defaults['meta']['description'] ?? '');
 $meta_keywords     = $get_val('landing_meta_keywords', isset($defaults['meta']['keywords']) && is_array($defaults['meta']['keywords']) ? implode(', ', $defaults['meta']['keywords']) : '');
+$meta_og_image     = $get_val('landing_meta_og_image', $defaults['meta']['ogImage'] ?? $defaults['meta']['thumbnail'] ?? '');
 $nav_cta_label     = $get_val('landing_nav_cta_label', $defaults['navCta']['label'] ?? 'Đăng ký tư vấn');
 $nav_cta_href      = $get_val('landing_nav_cta_href', $defaults['navCta']['href'] ?? '#dang-ky');
 
@@ -35,6 +36,11 @@ $is_active_seo_pane = ! isset($tab_seo_active) || ! empty($tab_seo_active);
             <div class="tt-field-row">
                 <label>Keywords (Từ khóa SEO, phân cách bởi dấu phẩy)</label>
                 <input type="text" name="landing_meta_keywords" class="widefat" value="<?php echo esc_attr($meta_keywords); ?>" />
+            </div>
+            <div class="tt-field-row">
+                <label>Ảnh chia sẻ Mạng Xã Hội (OG Image)</label>
+                <input type="text" name="landing_meta_og_image" class="widefat" value="<?php echo esc_attr($meta_og_image); ?>" placeholder="https://... (Để trống sẽ tự động lấy Featured Image hoặc ảnh mặc định Thiên Tâm)" />
+                <p class="description" style="margin-top:4px; font-size:12px; color:#64748b;">Khuyến nghị 1200x630px khi share link lên Facebook, Zalo, Telegram. Để trống sẽ tự động lấy Featured Image hoặc ảnh mặc định Thiên Tâm.</p>
             </div>
             <div class="tt-card" style="margin-top:16px;">
                 <div class="tt-card-header">Nút CTA trên Thanh điều hướng (Header)</div>

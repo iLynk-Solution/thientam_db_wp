@@ -692,6 +692,10 @@ function thientam_rest_get_news_detail($request)
 
     $post = $posts[0];
     $thumbnail_url = get_the_post_thumbnail_url($post->ID, 'full') ?: '';
+    $placeholder_image = 'https://site.thientam68.com/wp-content/uploads/2026/08/Placeholder-Thien-Tam.png';
+    $custom_og_image = get_post_meta($post->ID, 'seo_og_image', true) ?: '';
+    $effective_image = $thumbnail_url ?: $placeholder_image;
+    $effective_og_image = $custom_og_image ?: ($thumbnail_url ?: $placeholder_image);
     $cat_name = thientam_get_primary_category_name($post->ID);
     $author = get_the_author_meta('display_name', $post->post_author) ?: 'Chuyên gia Thiên Tâm';
 
@@ -780,7 +784,14 @@ function thientam_rest_get_news_detail($request)
         'content'   => apply_filters('the_content', $post->post_content),
         'date'      => get_the_date('d/m/Y H:m:i', $post->ID),
         'author'    => html_entity_decode($author, ENT_QUOTES, 'UTF-8'),
-        'image'     => $thumbnail_url,
+        'image'     => $effective_image,
+        'og_image'  => $effective_og_image,
+        'seo'       => array(
+            'title'       => get_post_meta($post->ID, 'seo_meta_title', true) ?: (html_entity_decode($post->post_title, ENT_QUOTES, 'UTF-8') . ' | Tin tức Thiên Tâm'),
+            'description' => get_post_meta($post->ID, 'seo_meta_description', true) ?: html_entity_decode($desc, ENT_QUOTES, 'UTF-8'),
+            'keywords'    => get_post_meta($post->ID, 'seo_meta_keywords', true) ?: implode(', ', $tag_names),
+            'og_image'    => $effective_og_image,
+        ),
         'tags'      => $tag_names,
         'related'   => $related_items,
     );

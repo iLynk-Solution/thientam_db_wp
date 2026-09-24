@@ -23,6 +23,15 @@ function thientam_register_training_detail_metaboxes($post_type, $post)
         add_meta_box("thientam_box_training_audience", "Đối tượng phù hợp chi tiết (Audience Items)", "thientam_render_box_training_audience", "page", "normal", "high");
         add_meta_box("thientam_box_training_benefits", "Hình thức & Quyền lợi học viên (Benefit Items)", "thientam_render_box_training_benefits", "page", "normal", "high");
         add_meta_box("thientam_box_training_lessons", "Danh sách Chuyên đề / Bài giảng (Lessons)", "thientam_render_box_training_lessons", "page", "normal", "high");
+        add_meta_box("thientam_box_training_seo", "Tối ưu SEO & Ảnh chia sẻ Mạng Xã Hội (SEO & OG Share)", "thientam_render_box_training_seo", "page", "normal", "high");
+    }
+}
+
+// Enqueue WP Media cho uploader ảnh SEO
+add_action('admin_enqueue_scripts', 'thientam_training_enqueue_media');
+function thientam_training_enqueue_media($hook) {
+    if ($hook === 'post.php' || $hook === 'post-new.php') {
+        wp_enqueue_media();
     }
 }
 
@@ -59,7 +68,8 @@ function thientam_training_boxes_toggle_js()
                     "#thientam_box_training_metrics",
                     "#thientam_box_training_audience",
                     "#thientam_box_training_benefits",
-                    "#thientam_box_training_lessons"
+                    "#thientam_box_training_lessons",
+                    "#thientam_box_training_seo"
                 ];
 
                 $.each(boxIds, function(i, id) {
@@ -328,6 +338,96 @@ function thientam_render_box_training_lessons($post)
 <?php
 }
 
+// BOX 6: TỐI ƯU SEO & ẢNH CHIA SẺ MẠNG XÃ HỘI (OG IMAGE)
+function thientam_render_box_training_seo($post)
+{
+    $post_id = $post->ID;
+    $seo_title = get_post_meta($post_id, "training_seo_meta_title", true) ?: get_post_meta($post_id, "seo_meta_title", true) ?: "";
+    $seo_desc = get_post_meta($post_id, "training_seo_meta_description", true) ?: get_post_meta($post_id, "seo_meta_description", true) ?: "";
+    $seo_keywords = get_post_meta($post_id, "training_seo_meta_keywords", true) ?: get_post_meta($post_id, "seo_meta_keywords", true) ?: "";
+    $seo_og_image = get_post_meta($post_id, "training_seo_og_image", true) ?: get_post_meta($post_id, "seo_og_image", true) ?: "";
+    $default_placeholder = "https://site.thientam68.com/wp-content/uploads/2026/08/Placeholder-Thien-Tam.png";
+    $thumbnail_id = get_post_thumbnail_id($post_id);
+    $thumbnail_url = $thumbnail_id ? wp_get_attachment_image_url($thumbnail_id, "full") : "";
+    $effective_preview = $seo_og_image ?: ($thumbnail_url ?: $default_placeholder);
+?>
+    <style>
+        .tt-seo-field-group { margin-bottom: 16px; }
+        .tt-seo-field-group label { display: block; font-weight: 600; margin-bottom: 6px; color: #1e293b; }
+        .tt-seo-field-group p.description { color: #64748b; font-size: 13px; margin: 4px 0 0; }
+        .tt-seo-preview-wrap { display: flex; gap: 16px; align-items: flex-start; margin-top: 8px; flex-wrap: wrap; }
+        .tt-seo-thumb-box { width: 220px; height: 115px; border-radius: 8px; border: 1px solid #cbd5e1; overflow: hidden; background: #f8fafc; display: flex; align-items: center; justify-content: center; }
+        .tt-seo-thumb-box img { width: 100%; height: 100%; object-fit: cover; }
+        .tt-seo-btn-group { display: flex; flex-direction: column; gap: 8px; justify-content: center; }
+    </style>
+    <div class="tt-seo-field-group">
+        <label for="training_seo_meta_title">Tiêu đề SEO tùy biến (Meta Title):</label>
+        <input type="text" id="training_seo_meta_title" name="training_seo_meta_title" value="<?php echo esc_attr($seo_title); ?>" style="width: 100%;" placeholder="Để trống sẽ tự động lấy: [Tên khóa học] - Đào tạo Tử Vi Thiên Tâm" />
+        <p class="description">Tiêu đề hiển thị trên thanh tiêu đề trình duyệt và kết quả tìm kiếm Google (50-60 ký tự).</p>
+    </div>
+    <div class="tt-seo-field-group">
+        <label for="training_seo_meta_description">Mô tả SEO tùy biến (Meta Description):</label>
+        <textarea id="training_seo_meta_description" name="training_seo_meta_description" rows="3" style="width: 100%;" placeholder="Để trống sẽ tự động lấy Tóm tắt khóa học..."><?php echo esc_textarea($seo_desc); ?></textarea>
+        <p class="description">Đoạn tóm tắt hiển thị trên Google và khi chia sẻ liên kết (120-160 ký tự).</p>
+    </div>
+    <div class="tt-seo-field-group">
+        <label for="training_seo_meta_keywords">Từ khóa SEO (Meta Keywords):</label>
+        <input type="text" id="training_seo_meta_keywords" name="training_seo_meta_keywords" value="<?php echo esc_attr($seo_keywords); ?>" style="width: 100%;" placeholder="tử vi nhập môn, đào tạo tử vi, khóa học cổ học, phong thủy thiên tâm..." />
+        <p class="description">Các từ khóa cách nhau bởi dấu phẩy.</p>
+    </div>
+    <div class="tt-seo-field-group">
+        <label>Ảnh chia sẻ Mạng Xã Hội (OG Image / Social Share):</label>
+        <div class="tt-seo-preview-wrap">
+            <div class="tt-seo-thumb-box" id="tt-training-og-preview">
+                <img src="<?php echo esc_url($effective_preview); ?>" alt="Preview" />
+            </div>
+            <div class="tt-seo-btn-group">
+                <input type="hidden" name="training_seo_og_image" id="tt-training-og-input" value="<?php echo esc_attr($seo_og_image); ?>" />
+                <button type="button" class="button button-primary" id="tt-training-og-pick-btn">🖼️ Chọn ảnh từ Media...</button>
+                <button type="button" class="button" id="tt-training-og-remove-btn" style="<?php echo empty($seo_og_image) ? 'display:none;' : ''; ?>">Xóa ảnh tùy biến (Lấy từ Featured Image)</button>
+                <p class="description" style="max-width: 480px;">
+                    <strong>Quy tắc nhận ảnh:</strong> Ưu tiên ảnh tùy biến tại đây &rarr; Nếu không có sẽ lấy Ảnh đại diện (Featured Image) của trang &rarr; Nếu chưa cài ảnh đại diện sẽ tự động dùng ảnh mặc định Thiên Tâm: <code><?php echo esc_html($default_placeholder); ?></code>.
+                </p>
+            </div>
+        </div>
+    </div>
+    <script>
+        jQuery(document).ready(function($) {
+            var mediaFrame = null;
+            var defaultFallback = <?php echo json_encode($thumbnail_url ?: $default_placeholder); ?>;
+
+            $("#tt-training-og-pick-btn").on("click", function(e) {
+                e.preventDefault();
+                if (mediaFrame) {
+                    mediaFrame.open();
+                    return;
+                }
+                mediaFrame = wp.media({
+                    title: "Chọn ảnh chia sẻ Mạng Xã Hội (OG Image)",
+                    button: { text: "Sử dụng ảnh này" },
+                    multiple: false
+                });
+                mediaFrame.on("select", function() {
+                    var attachment = mediaFrame.state().get("selection").first().toJSON();
+                    var url = attachment.url;
+                    $("#tt-training-og-input").val(url);
+                    $("#tt-training-og-preview img").attr("src", url);
+                    $("#tt-training-og-remove-btn").show();
+                });
+                mediaFrame.open();
+            });
+
+            $("#tt-training-og-remove-btn").on("click", function(e) {
+                e.preventDefault();
+                $("#tt-training-og-input").val("");
+                $("#tt-training-og-preview img").attr("src", defaultFallback);
+                $(this).hide();
+            });
+        });
+    </script>
+<?php
+}
+
 // Lưu dữ liệu tất cả các metaboxes
 add_action("save_post_page", "thientam_save_training_boxes_data", 10, 2);
 function thientam_save_training_boxes_data($post_id, $post)
@@ -423,6 +523,23 @@ function thientam_save_training_boxes_data($post_id, $post)
         update_post_meta($post_id, "_training_lessons", $lessons);
         if (function_exists("update_field")) {
             update_field("training_lessons", $acf_lessons, $post_id);
+        }
+    }
+
+    // 6. Lưu SEO & OG Image
+    $seo_fields = array(
+        "training_seo_meta_title"       => "seo_meta_title",
+        "training_seo_meta_description" => "seo_meta_description",
+        "training_seo_meta_keywords"    => "seo_meta_keywords",
+        "training_seo_og_image"         => "seo_og_image"
+    );
+    foreach ($seo_fields as $post_key => $alias_key) {
+        if (isset($_POST[$post_key])) {
+            $val = sanitize_text_field(wp_unslash($_POST[$post_key]));
+            update_post_meta($post_id, $post_key, $val);
+            update_post_meta($post_id, "_" . $post_key, $val);
+            update_post_meta($post_id, $alias_key, $val);
+            update_post_meta($post_id, "_" . $alias_key, $val);
         }
     }
 }

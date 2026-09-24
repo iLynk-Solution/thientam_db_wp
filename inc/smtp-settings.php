@@ -551,6 +551,37 @@ function thientam_send_lead_notification_email($post_id, $data = array())
 
     $subject = '[' . $site_name . '] ' . $form_title . ': ' . $name . ($phone ? ' (' . $phone . ')' : '');
 
+    // Auto-inject tình trạng thanh toán nếu phát hiện payment nhưng chưa có status
+    $payment_status_key = null;
+    foreach ($fields as $fk => $fv) {
+        $fk_lower = function_exists('mb_strtolower') ? mb_strtolower(trim((string)$fk), 'UTF-8') : strtolower(trim((string)$fk));
+        if (in_array($fk_lower, array('tình trạng thanh toán', 'trạng thái thanh toán'))) {
+            $payment_status_key = $fk;
+            break;
+        }
+    }
+    if ($payment_status_key === null) {
+        // Kiểm tra có payment field không (VietQR / SePay / số tiền cụ thể)
+        $has_payment_fields = false;
+        foreach ($fields as $fk => $fv) {
+            $fk_lower = function_exists('mb_strtolower') ? mb_strtolower(trim((string)$fk), 'UTF-8') : strtolower(trim((string)$fk));
+            $fv_str   = is_array($fv) ? implode(', ', $fv) : (string)$fv;
+            $has_vietqr = in_array($fk_lower, array('phương thức', 'phương thức thanh toán', 'hình thức thanh toán'))
+                && (stripos($fv_str, 'vietqr') !== false || stripos($fv_str, 'sepay') !== false || stripos($fv_str, 'chuyển khoản') !== false);
+            $has_cost   = in_array($fk_lower, array('chi phí', 'phí tư vấn', 'giá gói', 'học phí'))
+                && stripos($fv_str, 'thỏa thuận') === false
+                && stripos($fv_str, 'miễn phí') === false
+                && preg_match('/\d+/', $fv_str);
+            if ($has_vietqr || $has_cost) {
+                $has_payment_fields = true;
+                break;
+            }
+        }
+        if ($has_payment_fields) {
+            $fields['Tình trạng thanh toán'] = 'Đang chờ thanh toán';
+        }
+    }
+
     // Render body từ file template templates/emails/lead-notification.php
     $body = thientam_render_email_template('lead-notification', array(
         'title'      => 'Yêu Cầu Tư Vấn Mới',
@@ -566,6 +597,7 @@ function thientam_send_lead_notification_email($post_id, $data = array())
         'page_url'   => $page_url,
         'admin_url'  => $admin_url,
     ));
+
 
     $sent = wp_mail($valid_emails, $subject, $body);
 

@@ -74,6 +74,21 @@ function thientam_landing_get_data_hieu_minh($page_id, $slug)
             'perspectives.titleHighlight' => 'landing_perspectives_title_highlight',
             'perspectives.lead'           => 'landing_perspectives_lead',
 
+            // Approach (Section 03: Cách tiếp cận / Triết lý)
+            'approach.titlePrefix'        => 'landing_approach_title_prefix',
+            'approach.titleHighlight'     => 'landing_approach_title_highlight',
+            'approach.cardTitle'          => 'landing_approach_card_title',
+            'approach.visualQuote'        => 'landing_approach_card_title',
+            'approach.cardBadge'          => 'landing_approach_card_badge',
+            'approach.visualLabel'        => 'landing_approach_card_badge',
+            'approach.desc1'              => 'landing_approach_desc1',
+            'approach.desc2'              => 'landing_approach_desc2',
+            'approach.desc'               => 'landing_approach_desc1',
+            'approach.image'              => 'landing_approach_image',
+            'approach.imageAlt'           => 'landing_approach_image_alt',
+            'approach.btn'                => 'landing_approach_btn',
+            'approach.notice'             => 'landing_approach_notice',
+
             // Service Values (Section 04: Không chỉ là thông tin)
             'serviceValues.eyebrow'        => 'landing_service_values_eyebrow',
             'serviceValues.titlePrefix'    => 'landing_service_values_title_prefix',
@@ -182,6 +197,13 @@ function thientam_landing_get_data_hieu_minh($page_id, $slug)
             $data['perspectives']['title'] = trim($p_pre . ' ' . $p_hl);
         }
 
+        // Approach title tổng hợp
+        $app_pre = $data['approach']['titlePrefix'] ?? '';
+        $app_hl  = $data['approach']['titleHighlight'] ?? '';
+        if (! empty($app_pre) || ! empty($app_hl)) {
+            $data['approach']['title'] = trim($app_pre . ' ' . $app_hl);
+        }
+
         // Service Values title tổng hợp
         $sv_pre = $data['serviceValues']['titlePrefix'] ?? '';
         $sv_hl  = $data['serviceValues']['titleHighlight'] ?? '';
@@ -251,6 +273,24 @@ function thientam_landing_get_data_hieu_minh($page_id, $slug)
         $form_suf = $data['form']['titleSuffix'] ?? '';
         if (! empty($form_pre) || ! empty($form_hl) || ! empty($form_suf)) {
             $data['form']['title'] = trim(trim($form_pre . ' ' . $form_hl) . ' ' . $form_suf);
+        }
+
+        // Approach Pills & Points
+        $app_pills_raw = get_post_meta($page_id, 'landing_approach_pills', true);
+        if (! empty($app_pills_raw)) {
+            $dec_app_pills = function_exists('thientam_decode_json_meta') ? thientam_decode_json_meta($app_pills_raw) : json_decode($app_pills_raw, true);
+            if (is_array($dec_app_pills)) {
+                $data['approach']['pills'] = array_values($dec_app_pills);
+                $is_customized = true;
+            }
+        }
+        $app_points_raw = get_post_meta($page_id, 'landing_approach_points', true);
+        if (! empty($app_points_raw)) {
+            $dec_app_pts = function_exists('thientam_decode_json_meta') ? thientam_decode_json_meta($app_points_raw) : json_decode($app_points_raw, true);
+            if (is_array($dec_app_pts)) {
+                $data['approach']['points'] = array_values($dec_app_pts);
+                $is_customized = true;
+            }
         }
 
         // Expert Pills & Direct Value
@@ -429,13 +469,43 @@ function thientam_landing_get_data_hieu_minh($page_id, $slug)
             }
         }
 
-        // Thumbnail
+        // OG Image & Thumbnail
+        $custom_og = get_post_meta($page_id, 'landing_meta_og_image', true);
         $thumb_id = get_post_thumbnail_id($page_id);
-        if ($thumb_id) {
-            $wp_thumb = wp_get_attachment_image_url($thumb_id, 'full');
-            if (! empty($wp_thumb)) {
-                $data['meta']['thumbnail'] = $wp_thumb;
-                $data['thumbnail'] = $wp_thumb;
+        $wp_thumb = $thumb_id ? wp_get_attachment_image_url($thumb_id, 'full') : '';
+        $placeholder_og = 'https://site.thientam68.com/wp-content/uploads/2026/08/Placeholder-Thien-Tam.png';
+        $final_og = $custom_og ?: ($wp_thumb ?: (!empty($data['meta']['ogImage']) ? $data['meta']['ogImage'] : (!empty($data['meta']['thumbnail']) ? $data['meta']['thumbnail'] : $placeholder_og)));
+
+        if (! empty($wp_thumb)) {
+            $data['meta']['thumbnail'] = $wp_thumb;
+            $data['thumbnail'] = $wp_thumb;
+        }
+        $data['meta']['ogImage'] = $final_og;
+
+        // Feedback (Hình ảnh phản hồi)
+        if (! isset($data['feedback']) || ! is_array($data['feedback'])) {
+            $data['feedback'] = array(
+                'titlePrefix'    => '',
+                'titleHighlight' => '',
+                'desc'           => '',
+                'items'          => array(),
+            );
+        }
+        if (metadata_exists('post', $page_id, 'landing_feedback_title_prefix')) {
+            $data['feedback']['titlePrefix'] = get_post_meta($page_id, 'landing_feedback_title_prefix', true);
+        }
+        if (metadata_exists('post', $page_id, 'landing_feedback_title_highlight')) {
+            $data['feedback']['titleHighlight'] = get_post_meta($page_id, 'landing_feedback_title_highlight', true);
+        }
+        if (metadata_exists('post', $page_id, 'landing_feedback_desc')) {
+            $data['feedback']['desc'] = get_post_meta($page_id, 'landing_feedback_desc', true);
+        }
+        $fb_raw = get_post_meta($page_id, 'landing_feedback_items', true);
+        if (! empty($fb_raw)) {
+            $decoded_fb = is_array($fb_raw) ? $fb_raw : json_decode($fb_raw, true);
+            if (is_array($decoded_fb) && ! empty($decoded_fb)) {
+                $data['feedback']['items'] = array_values($decoded_fb);
+                $is_customized = true;
             }
         }
     } else {
@@ -451,7 +521,58 @@ function thientam_landing_get_data_hieu_minh($page_id, $slug)
 
 function thientam_landing_default_seed_hieu_minh()
 {
-    return array();
+    return array(
+        'meta' => array(
+            'title'       => 'Tư Vấn Tử Vi Ứng Dụng & Thấu Hiểu Bản Thân | Thiên Tâm',
+            'description' => 'Khám phá tiềm năng, giải mã định hướng cuộc sống và đưa ra quyết định vững vàng cùng chuyên gia Thiên Tâm qua góc nhìn Tử Vi khoa học, nhân văn.',
+            'keywords'    => array('tử vi ứng dụng', 'thấu hiểu bản thân', 'định hướng cuộc đời', 'thiên tâm tử vi'),
+        ),
+        'navCta' => array(
+            'label' => 'Đăng ký tư vấn',
+            'href'  => '#dang-ky',
+        ),
+        'hero' => array(
+            'kicker'         => 'GÓC NHÌN ĐA CHIỀU & KHOA HỌC TỪ TỬ VI ỨNG DỤNG',
+            'titlePrefix'    => 'Thấu hiểu bản thân để',
+            'titleHighlight' => 'chủ động kiến tạo tương lai',
+            'leadHighlight'  => 'Không phán đoán áp đặt,',
+            'lead'           => 'Thiên Tâm đồng hành giúp bạn soi sáng bức tranh nội tại, hiểu rõ điểm mạnh yếu và nắm bắt thời điểm quan trọng trong cuộc đời.',
+            'ctaPrimary'     => 'Đăng ký tư vấn',
+            'ctaSecondary'   => 'Tìm hiểu phương pháp',
+            'ctaPrimaryHref' => '#dang-ky',
+            'ctaSecondaryHref' => '#cach-tiep-can',
+            'image'          => '/images/brand-showcase.png',
+            'imageAlt'       => 'Tư vấn thấu hiểu bản thân Thiên Tâm',
+            'imageBadge'     => 'Tư vấn 1-1 cùng Chuyên gia',
+            'quote'          => array(
+                'bold' => 'Lá số là bản đồ định hướng,',
+                'sub'  => 'bạn là người cầm lái cuộc đời mình.',
+            ),
+            'chips'          => array(
+                'Thấu hiểu tính cách & tiềm năng ẩn giấu',
+                'Nhận diện các mốc chuyển vận quan trọng',
+                'Định hướng sự nghiệp & các mối quan hệ',
+                'Tư vấn trực tiếp, bảo mật tuyệt đối 100%',
+            ),
+        ),
+        'approach' => array(
+            'titlePrefix'    => 'Không phán đoán —',
+            'titleHighlight' => 'mà giúp bạn hiểu mình sâu hơn',
+            'cardTitle'      => 'Lá số không thay bạn lựa chọn.',
+            'cardBadge'      => 'Góc nhìn Thiên Tâm',
+            'desc1'          => 'Thiên Tâm không hướng khách hàng phụ thuộc vào một lời luận giải, mà xem Tử Vi như một góc nhìn hỗ trợ cho quá trình thấu hiểu bản thân và lựa chọn.',
+            'desc2'          => 'Giá trị của việc luận giải không nằm ở việc nghe một câu "đúng" hay "sai", "tốt" hay "xấu". Điều Thiên Tâm hướng đến là giúp bạn hiểu mình, hiểu hoàn cảnh, nhận diện xu hướng và hiểu thời điểm để chủ động hơn trước lựa chọn của chính mình.',
+            'image'          => '/images/brand-showcase.png',
+            'imageAlt'       => 'Lá số không thay bạn lựa chọn.',
+            'btn'            => 'Tìm hiểu thêm',
+            'pills'          => array(
+                'Hiểu mình và hoàn cảnh thực tế',
+                'Nhận diện xu hướng và tiềm năng',
+                'Hiểu đúng thời điểm để chủ động',
+                'Không phán đoán áp đặt một chiều',
+            ),
+        ),
+    );
 }
 
 function thientam_landing_init_hieu_minh($page_id)

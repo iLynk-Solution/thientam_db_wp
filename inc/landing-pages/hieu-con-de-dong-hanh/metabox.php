@@ -209,6 +209,12 @@ $faq_desc         = $get_val('landing_faq_desc', $defaults['faq']['desc'] ?? '')
 $faq_note         = $get_val('landing_faq_note', $defaults['faq']['note'] ?? '');
 $faq_items        = $get_json_val('landing_faq_items', $defaults['faq']['items'] ?? array());
 
+// Feedback (Hình ảnh phản hồi)
+$feedback_prefix    = $get_val('landing_feedback_title_prefix', $defaults['feedback']['titlePrefix'] ?? '');
+$feedback_highlight = $get_val('landing_feedback_title_highlight', $defaults['feedback']['titleHighlight'] ?? '');
+$feedback_desc      = $get_val('landing_feedback_desc', $defaults['feedback']['desc'] ?? '');
+$feedback_items     = $get_json_val('landing_feedback_items', $defaults['feedback']['items'] ?? array());
+
 // Final CTA
 $final_prefix     = $get_val('landing_final_title_prefix', $defaults['finalCta']['titlePrefix'] ?? '');
 $final_highlight  = $get_val('landing_final_title_highlight', $defaults['finalCta']['titleHighlight'] ?? '');
@@ -228,8 +234,9 @@ $final_statement  = $get_val('landing_final_statement', $defaults['finalCta']['s
             <button type="button" class="tt-tab-btn" data-tab="tab-expert">07. Chuyên gia</button>
             <button type="button" class="tt-tab-btn" data-tab="tab-proc">08. Quy trình & Niềm tin</button>
             <button type="button" class="tt-tab-btn" data-tab="tab-faq">09. FAQ</button>
-            <button type="button" class="tt-tab-btn" data-tab="tab-final">10. Kêu gọi cuối trang</button>
-            <button type="button" class="tt-tab-btn" data-tab="tab-registration">11. Form đăng ký</button>
+            <button type="button" class="tt-tab-btn" data-tab="tab-feedback">10. Hình ảnh phản hồi</button>
+            <button type="button" class="tt-tab-btn" data-tab="tab-final">11. Kêu gọi cuối trang</button>
+            <button type="button" class="tt-tab-btn" data-tab="tab-registration">12. Form đăng ký</button>
         </div>
 
         <!-- TAB 1: SEO & HEADER (DÙNG CHUNG) -->
@@ -499,7 +506,69 @@ $final_statement  = $get_val('landing_final_statement', $defaults['finalCta']['s
         include dirname(__DIR__) . '/metabox-faq.php';
         ?>
 
-        <!-- TAB 10: KẾT & FORM -->
+        <!-- TAB 10: HÌNH ẢNH PHẢN HỒI (FEEDBACK) -->
+        <div id="tab-feedback" class="tt-tab-pane">
+            <h3 style="margin-top:0; color:#0f3d61;">10. Hình ảnh phản hồi khách hàng (Feedback)</h3>
+            <p class="description" style="margin-bottom:16px;">Phần hiển thị carousel hình ảnh feedback, tin nhắn cảm nhận của phụ huynh ở cuối trang landing page.</p>
+
+            <div class="tt-field-grid">
+                <div class="tt-field-row">
+                    <label>Tiêu đề đầu (Prefix)</label>
+                    <input type="text" name="landing_feedback_title_prefix" class="widefat" placeholder="VD: Lắng nghe từ các bậc cha mẹ" value="<?php echo esc_attr($feedback_prefix); ?>" />
+                </div>
+                <div class="tt-field-row">
+                    <label>Tiêu đề nổi bật (Highlight)</label>
+                    <input type="text" name="landing_feedback_title_highlight" class="widefat" placeholder="VD: Phản hồi thực tế" value="<?php echo esc_attr($feedback_highlight); ?>" />
+                </div>
+            </div>
+            <div class="tt-field-row">
+                <label>Mô tả ngắn</label>
+                <textarea name="landing_feedback_desc" class="widefat" rows="2" placeholder="VD: Những chia sẻ, cảm nhận chân thực của các phụ huynh sau buổi luận giải..."><?php echo esc_textarea($feedback_desc); ?></textarea>
+            </div>
+
+            <div class="tt-card">
+                <div class="tt-card-header" style="display:flex; justify-content:space-between; align-items:center;">
+                    <span>Danh sách hình ảnh phản hồi</span>
+                    <button type="button" id="tt-btn-add-feedback-img" class="button button-secondary">+ Thêm hình ảnh</button>
+                </div>
+                <div id="tt-feedback-items-container" style="padding:15px; display:flex; flex-direction:column; gap:15px;">
+                    <?php if (empty($feedback_items)) : ?>
+                        <div class="tt-feedback-empty-notice" style="text-align:center; padding:20px; color:#888; border:1px dashed #ccd0d4; border-radius:8px;">
+                            Chưa có hình ảnh phản hồi nào. Bấm <strong>"+ Thêm hình ảnh"</strong> để tải ảnh chụp màn hình feedback từ phụ huynh.
+                        </div>
+                    <?php else : ?>
+                        <?php foreach ($feedback_items as $fbi => $fb_item) :
+                            $fb_img = is_array($fb_item) ? ($fb_item['image'] ?? '') : (string) $fb_item;
+                            $fb_alt = is_array($fb_item) ? ($fb_item['alt'] ?? '') : '';
+                            $fb_title = is_array($fb_item) ? ($fb_item['title'] ?? '') : '';
+                        ?>
+                            <div class="tt-feedback-item-row" style="display:flex; gap:15px; align-items:flex-start; padding:12px; background:#f9f9f9; border:1px solid #e2e8f0; border-radius:8px;">
+                                <div class="tt-feedback-img-preview" style="width:90px; height:90px; border-radius:6px; overflow:hidden; border:1px solid #cbd5e1; background:#fff; display:flex; align-items:center; justify-content:center; shrink:0;">
+                                    <?php if (! empty($fb_img)) : ?>
+                                        <img src="<?php echo esc_url($fb_img); ?>" style="width:100%; height:100%; object-fit:cover;" />
+                                    <?php else : ?>
+                                        <span style="font-size:11px; color:#94a3b8;">Chưa có ảnh</span>
+                                    <?php endif; ?>
+                                </div>
+                                <div style="flex:1; display:flex; flex-direction:column; gap:8px;">
+                                    <div style="display:flex; gap:8px;">
+                                        <input type="text" name="feedback_items[<?php echo $fbi; ?>][image]" class="widefat tt-feedback-img-input" value="<?php echo esc_attr($fb_img); ?>" placeholder="URL hình ảnh (https://...)" />
+                                        <button type="button" class="button button-secondary tt-btn-upload-feedback-img">📷 Chọn ảnh</button>
+                                        <button type="button" class="button button-link-delete tt-btn-remove-feedback-img" style="color:#d63638;">Xóa</button>
+                                    </div>
+                                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                                        <input type="text" name="feedback_items[<?php echo $fbi; ?>][title]" class="widefat" value="<?php echo esc_attr($fb_title); ?>" placeholder="Tiêu đề / Tên phụ huynh (tùy chọn)" />
+                                        <input type="text" name="feedback_items[<?php echo $fbi; ?>][alt]" class="widefat" value="<?php echo esc_attr($fb_alt); ?>" placeholder="Ghi chú ảnh / Alt text" />
+                                    </div>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 11: KẾT & FORM -->
         <div id="tab-final" class="tt-tab-pane">
             <h3 style="margin-top:0; color:#0f3d61;">Phần Kêu Gọi Cuối Trang (Final CTA)</h3>
             <div class="tt-field-grid">
@@ -522,12 +591,12 @@ $final_statement  = $get_val('landing_final_statement', $defaults['finalCta']['s
             </div>
         </div>
 
-        <!-- TAB 11: FORM ĐĂNG KÝ (DÙNG CHUNG) -->
+        <!-- TAB 12: FORM ĐĂNG KÝ (DÙNG CHUNG) -->
         <?php
         $tab_reg_id      = 'tab-registration';
         $tab_reg_active  = false;
         $tab_reg_wrap    = true;
-        $tab_reg_heading = '11. Cột giới thiệu Form Đăng ký tư vấn (Cột trái)';
+        $tab_reg_heading = '12. Cột giới thiệu Form Đăng ký tư vấn (Cột trái)';
         $reg_data_key    = 'form';
         include dirname(__DIR__) . '/metabox-registration.php';
         ?>

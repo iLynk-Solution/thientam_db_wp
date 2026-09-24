@@ -44,6 +44,7 @@ function thientam_landing_get_data_hieu_con_de_dong_hanh($page_id, $slug)
             'trust.items'                => 'landing_trust_items',
             'faq.items'                  => 'landing_faq_items',
             'finalCta'                   => 'landing_final_cta',
+            'feedback.items'             => 'landing_feedback_items',
             'nav'                        => 'landing_nav',
             'navCta'                     => 'landing_nav_cta',
         );
@@ -166,6 +167,11 @@ function thientam_landing_get_data_hieu_con_de_dong_hanh($page_id, $slug)
             'finalCta.lead'                        => 'landing_final_lead',
             'finalCta.statement'                   => 'landing_final_statement',
 
+            // Feedback (Hình ảnh phản hồi)
+            'feedback.titlePrefix'                 => 'landing_feedback_title_prefix',
+            'feedback.titleHighlight'              => 'landing_feedback_title_highlight',
+            'feedback.desc'                        => 'landing_feedback_desc',
+
             // Registration Form (Khối giới thiệu Form đăng ký - Cột trái)
             'form.titlePrefix'                     => 'landing_form_title_prefix',
             'form.titleHighlight'                  => 'landing_form_title_highlight',
@@ -255,11 +261,14 @@ function thientam_landing_get_data_hieu_con_de_dong_hanh($page_id, $slug)
         }
 
         // Xử lý Thumbnail WP cho Meta & OpenGraph
+        $custom_og = get_post_meta($page_id, 'landing_meta_og_image', true);
         $thumb_id = get_post_thumbnail_id($page_id);
         $wp_thumb = $thumb_id ? wp_get_attachment_image_url($thumb_id, 'full') : '';
         if (empty($wp_thumb) && $page_id) {
             $wp_thumb = get_the_post_thumbnail_url($page_id, 'full') ?: '';
         }
+        $placeholder_og = 'https://site.thientam68.com/wp-content/uploads/2026/08/Placeholder-Thien-Tam.png';
+        $final_og = $custom_og ?: ($wp_thumb ?: (!empty($data['meta']['ogImage']) ? $data['meta']['ogImage'] : (!empty($data['meta']['thumbnail']) ? $data['meta']['thumbnail'] : $placeholder_og)));
 
         if (! empty($wp_thumb)) {
             $data['meta']['thumbnail'] = $wp_thumb;
@@ -268,6 +277,7 @@ function thientam_landing_get_data_hieu_con_de_dong_hanh($page_id, $slug)
                 $data['meta']['image'] = $wp_thumb;
             }
         }
+        $data['meta']['ogImage'] = $final_og;
     }
 
     // 4. Fallback chỉ khi trang chưa từng được khởi tạo trong Database
@@ -284,6 +294,21 @@ function thientam_landing_get_data_hieu_con_de_dong_hanh($page_id, $slug)
             $stored_arr['packages']['items'] = $data['packages']['items'];
             update_post_meta($page_id, 'landing_custom_json', wp_slash(wp_json_encode($stored_arr, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)));
         }
+    }
+
+    // Đảm bảo cấu trúc feedback luôn tồn tại (field trống mặc định)
+    if (! isset($data['feedback']) || ! is_array($data['feedback'])) {
+        $data['feedback'] = array(
+            'titlePrefix'    => '',
+            'titleHighlight' => '',
+            'desc'           => '',
+            'items'          => array(),
+        );
+    } else {
+        if (! isset($data['feedback']['titlePrefix'])) $data['feedback']['titlePrefix'] = '';
+        if (! isset($data['feedback']['titleHighlight'])) $data['feedback']['titleHighlight'] = '';
+        if (! isset($data['feedback']['desc'])) $data['feedback']['desc'] = '';
+        if (! isset($data['feedback']['items']) || ! is_array($data['feedback']['items'])) $data['feedback']['items'] = array();
     }
 
     return array(

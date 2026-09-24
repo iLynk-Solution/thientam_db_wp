@@ -1310,13 +1310,76 @@
                 }
             });
 
-            $(document).on('change', '.tt-pkg-featured', function() {
-                var $row = $(this).closest('.tt-package-card-row');
-                var $featBadge = $row.find('.pkg-featured-badge');
-                if ($(this).is(':checked')) {
-                    $featBadge.show();
+            // ==================== FEEDBACK IMAGES REPEATER ====================
+            $(document).on('click', '#tt-btn-add-feedback-img', function(e) {
+                e.preventDefault();
+                var $container = $('#tt-feedback-items-container');
+                $container.find('.tt-feedback-empty-notice').remove();
+                var count = $container.find('.tt-feedback-item-row').length;
+                var html = `
+                    <div class="tt-feedback-item-row" style="display:flex; gap:15px; align-items:flex-start; padding:12px; background:#f9f9f9; border:1px solid #e2e8f0; border-radius:8px;">
+                        <div class="tt-feedback-img-preview" style="width:90px; height:90px; border-radius:6px; overflow:hidden; border:1px solid #cbd5e1; background:#fff; display:flex; align-items:center; justify-content:center; shrink:0;">
+                            <span style="font-size:11px; color:#94a3b8;">Chưa có ảnh</span>
+                        </div>
+                        <div style="flex:1; display:flex; flex-direction:column; gap:8px;">
+                            <div style="display:flex; gap:8px;">
+                                <input type="text" name="feedback_items[` + count + `][image]" class="widefat tt-feedback-img-input" value="" placeholder="URL hình ảnh (https://...)" />
+                                <button type="button" class="button button-secondary tt-btn-upload-feedback-img">📷 Chọn ảnh</button>
+                                <button type="button" class="button button-link-delete tt-btn-remove-feedback-img" style="color:#d63638;">Xóa</button>
+                            </div>
+                            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                                <input type="text" name="feedback_items[` + count + `][title]" class="widefat" value="" placeholder="Tiêu đề / Tên phụ huynh (tùy chọn)" />
+                                <input type="text" name="feedback_items[` + count + `][alt]" class="widefat" value="" placeholder="Ghi chú ảnh / Alt text" />
+                            </div>
+                        </div>
+                    </div>`;
+                $container.append(html);
+            });
+
+            $(document).on('click', '.tt-btn-remove-feedback-img', function(e) {
+                e.preventDefault();
+                var $row = $(this).closest('.tt-feedback-item-row');
+                $row.remove();
+                var $container = $('#tt-feedback-items-container');
+                if ($container.find('.tt-feedback-item-row').length === 0) {
+                    $container.html(`
+                        <div class="tt-feedback-empty-notice" style="text-align:center; padding:20px; color:#888; border:1px dashed #ccd0d4; border-radius:8px;">
+                            Chưa có hình ảnh phản hồi nào. Bấm <strong>"+ Thêm hình ảnh"</strong> để tải ảnh chụp màn hình feedback từ phụ huynh.
+                        </div>`);
+                }
+            });
+
+            $(document).on('click', '.tt-btn-upload-feedback-img', function(e) {
+                e.preventDefault();
+                var $btn = $(this);
+                var $row = $btn.closest('.tt-feedback-item-row');
+                var $input = $row.find('.tt-feedback-img-input');
+                var $preview = $row.find('.tt-feedback-img-preview');
+
+                var frame = wp.media({
+                    title: 'Chọn ảnh phản hồi khách hàng',
+                    button: { text: 'Sử dụng ảnh này' },
+                    multiple: false
+                });
+
+                frame.on('select', function() {
+                    var attachment = frame.state().get('selection').first().toJSON();
+                    var url = attachment.url;
+                    $input.val(url);
+                    $preview.html('<img src="' + url + '" style="width:100%; height:100%; object-fit:cover;" />');
+                });
+
+                frame.open();
+            });
+
+            $(document).on('input', '.tt-feedback-img-input', function() {
+                var url = $(this).val().trim();
+                var $row = $(this).closest('.tt-feedback-item-row');
+                var $preview = $row.find('.tt-feedback-img-preview');
+                if (url) {
+                    $preview.html('<img src="' + url + '" style="width:100%; height:100%; object-fit:cover;" />');
                 } else {
-                    $featBadge.hide();
+                    $preview.html('<span style="font-size:11px; color:#94a3b8;">Chưa có ảnh</span>');
                 }
             });
         });

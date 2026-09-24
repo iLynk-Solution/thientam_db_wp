@@ -118,13 +118,31 @@ function thientam_format_training_page_data($post_id)
 
     $thumbnail_id = get_post_thumbnail_id($post_id);
     $thumbnail_url = $thumbnail_id ? wp_get_attachment_image_url($thumbnail_id, "full") : "";
+    $placeholder_image = "https://site.thientam68.com/wp-content/uploads/2026/08/Placeholder-Thien-Tam.png";
+
+    $seo_og_image = get_post_meta($post_id, "training_seo_og_image", true)
+        ?: get_post_meta($post_id, "seo_og_image", true)
+        ?: "";
+    $seo_title = get_post_meta($post_id, "training_seo_meta_title", true)
+        ?: get_post_meta($post_id, "seo_meta_title", true)
+        ?: "";
+    $seo_desc = get_post_meta($post_id, "training_seo_meta_description", true)
+        ?: get_post_meta($post_id, "seo_meta_description", true)
+        ?: "";
+    $seo_keywords = get_post_meta($post_id, "training_seo_meta_keywords", true)
+        ?: get_post_meta($post_id, "seo_meta_keywords", true)
+        ?: "";
+
+    // Thứ tự ưu tiên ảnh share: 1. Custom OG Image từ metabox -> 2. Thumbnail WP -> 3. Ảnh Placeholder Thiên Tâm
+    $effective_image = $thumbnail_url ?: $placeholder_image;
+    $effective_og_image = $seo_og_image ?: ($thumbnail_url ?: $placeholder_image);
 
     return array(
-        "slug"             => $post->post_name,
+        "slug"           => $post->post_name,
         "category"       => html_entity_decode($post->post_title, ENT_QUOTES, "UTF-8"),
         "subtitle"       => html_entity_decode($subtitle, ENT_QUOTES, "UTF-8"),
         "isCategory"     => true,
-        
+        "level"          => $level,
         "duration"       => $duration,
         "summary"        => html_entity_decode($summary, ENT_QUOTES, "UTF-8"),
         "targetAudience" => html_entity_decode($target_audience, ENT_QUOTES, "UTF-8"),
@@ -132,7 +150,14 @@ function thientam_format_training_page_data($post_id)
         "benefitItems"   => $benefit_items,
         "metrics"        => $metrics,
         "lessons"        => $lessons,
-        "image"          => $thumbnail_url,
+        "image"          => $effective_image,
+        "og_image"       => $effective_og_image,
+        "seo"            => array(
+            "title"       => $seo_title ?: (html_entity_decode($post->post_title, ENT_QUOTES, "UTF-8") . " - Đào tạo Tử Vi Thiên Tâm"),
+            "description" => $seo_desc ?: html_entity_decode($summary, ENT_QUOTES, "UTF-8"),
+            "keywords"    => $seo_keywords,
+            "og_image"    => $effective_og_image,
+        ),
     );
 }
 

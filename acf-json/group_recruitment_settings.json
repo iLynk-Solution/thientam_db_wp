@@ -1,0 +1,129 @@
+{
+    "key": "group_recruitment_settings",
+    "title": "Thông tin chi tiết Vị Trí Tuyển Dụng (Job Settings)",
+    "fields": [
+        {
+            "key": "field_recruitment_salary",
+            "label": "Mức lương / Thu nhập (Salary)",
+            "name": "salary",
+            "type": "text",
+            "instructions": "Ví dụ: 18.000.000 - 30.000.000 VNĐ + Thưởng dự án hoặc Thỏa thuận theo năng lực",
+            "placeholder": "18.000.000 - 30.000.000 VNĐ",
+            "required": 0
+        },
+        {
+            "key": "field_recruitment_location",
+            "label": "Địa điểm làm việc (Location)",
+            "name": "location",
+            "type": "text",
+            "instructions": "Ví dụ: Đà Lạt & TP. Hồ Chí Minh hoặc Đà Lạt / Làm việc từ xa (Hybrid)",
+            "placeholder": "Đà Lạt & TP. Hồ Chí Minh",
+            "required": 0
+        },
+        {
+            "key": "field_recruitment_type",
+            "label": "Hình thức làm việc (Employment Type)",
+            "name": "type",
+            "type": "select",
+            "instructions": "Chọn hình thức làm việc",
+            "choices": {
+                "Toàn thời gian": "Toàn thời gian",
+                "Bán thời gian": "Bán thời gian",
+                "Cộng tác viên / Bán thời gian": "Cộng tác viên / Bán thời gian",
+                "Làm việc từ xa (Remote)": "Làm việc từ xa (Remote)"
+            },
+            "default_value": "Toàn thời gian",
+            "required": 0
+        },
+        {
+            "key": "field_recruitment_experience",
+            "label": "Kinh nghiệm yêu cầu (Experience)",
+            "name": "experience",
+            "type": "text",
+            "instructions": "Ví dụ: Từ 2 năm kinh nghiệm hoặc Đam mê triết học / Hán Nôm",
+            "placeholder": "Từ 2 năm kinh nghiệm",
+            "required": 0
+        },
+        {
+            "key": "field_recruitment_deadline",
+            "label": "Hạn nộp hồ sơ (Deadline)",
+            "name": "deadline",
+            "type": "text",
+            "instructions": "Ví dụ: 31/10/2026",
+            "placeholder": "31/10/2026",
+            "required": 0
+        },
+        {
+            "key": "field_recruitment_is_featured",
+            "label": "Vị trí nổi bật (Featured Job)",
+            "name": "is_featured",
+            "type": "true_false",
+            "instructions": "Bật để gắn huy hiệu Nổi bật và hiển thị viền vàng trang trọng",
+            "message": "Đánh dấu là vị trí tuyển dụng nổi bật",
+            "default_value": 0
+        },
+        {
+            "key": "field_recruitment_overview",
+            "label": "Tổng quan vai trò (Role Overview)",
+            "name": "overview",
+            "type": "textarea",
+            "rows": 4,
+            "instructions": "Giới thiệu ý nghĩa vai trò, sứ mệnh công việc đối với khách hàng và Thiên Tâm."
+        },
+        {
+            "key": "field_recruitment_responsibilities",
+            "label": "Nhiệm vụ & Trách nhiệm chính (Responsibilities)",
+            "name": "responsibilities",
+            "type": "textarea",
+            "rows": 6,
+            "instructions": "Mỗi dòng là một gạch đầu dòng nhiệm vụ."
+        },
+        {
+            "key": "field_recruitment_requirements",
+            "label": "Yêu cầu ứng viên (Requirements)",
+            "name": "requirements",
+            "type": "textarea",
+            "rows": 6,
+            "instructions": "Mỗi dòng là một gạch đầu dòng yêu cầu về bằng cấp, kinh nghiệm và thái độ."
+        },
+        {
+            "key": "field_recruitment_benefits",
+            "label": "Quyền lợi & Chế độ đãi ngộ (Benefits)",
+            "name": "benefits",
+            "type": "textarea",
+            "rows": 6,
+            "instructions": "Mỗi dòng là một gạch đầu dòng quyền lợi (lương, thưởng, đào tạo, môi trường...)."
+        },
+        {
+            "key": "field_recruitment_work_location",
+            "label": "Địa chỉ nơi làm việc cụ thể (Specific Work Location)",
+            "name": "work_location",
+            "type": "text",
+            "instructions": "Ví dụ: Văn phòng Đà Lạt (Số 61/2 An Bình, Phường Xuân Hương) & Chi nhánh TP. Hồ Chí Minh",
+            "placeholder": "Số 61/2 An Bình, Phường Xuân Hương, TP. Đà Lạt"
+        },
+        {
+            "key": "field_recruitment_work_time",
+            "label": "Thời gian làm việc (Work Hours)",
+            "name": "work_time",
+            "type": "text",
+            "instructions": "Ví dụ: Thứ Hai đến Thứ Bảy (08:00 - 17:30)",
+            "placeholder": "Thứ Hai đến Thứ Bảy (08:00 - 17:30)"
+        }
+    ],
+    "location": [
+        [
+            {
+                "param": "post_type",
+                "operator": "==",
+                "value": "recruitment"
+            }
+        ]
+    ],
+    "menu_order": 0,
+    "position": "normal",
+    "style": "default",
+    "label_placement": "top",
+    "instruction_placement": "label",
+    "active": true
+}

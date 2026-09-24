@@ -48,7 +48,10 @@ foreach ($fields as $f) {
 // 2. Lưu & Đồng bộ Perspectives (Góc nhìn - Dùng chung)
 include dirname(__DIR__) . '/save-perspectives.php';
 
-// 3. Lưu & Đồng bộ Service Values (Không chỉ là thông tin)
+// 3. Lưu & Đồng bộ Cách tiếp cận / Triết lý (Approach - Dùng chung)
+include dirname(__DIR__) . '/save-approach.php';
+
+// 4. Lưu & Đồng bộ Service Values (Không chỉ là thông tin)
 $sv_fields = array(
     'landing_service_values_eyebrow',
     'landing_service_values_title_prefix',
@@ -201,6 +204,51 @@ include dirname(__DIR__) . '/save-faq.php';
 
 // 12. Lưu & Đồng bộ Form Đăng ký - Cột trái (Dùng chung)
 include dirname(__DIR__) . '/save-registration.php';
+
+// 12b. Lưu & Đồng bộ Feedback (Hình ảnh phản hồi)
+$fb_fields = array(
+    'landing_feedback_title_prefix',
+    'landing_feedback_title_highlight',
+    'landing_feedback_desc',
+);
+foreach ($fb_fields as $f) {
+    if (isset($_POST[$f])) {
+        $val = wp_unslash($_POST[$f]);
+        $val = ($f === 'landing_feedback_desc') ? sanitize_textarea_field($val) : sanitize_text_field($val);
+        update_post_meta($post_id, $f, $val);
+    }
+}
+if (isset($_POST['feedback_items']) && is_array($_POST['feedback_items'])) {
+    $clean_items = array();
+    foreach ($_POST['feedback_items'] as $item) {
+        $img = trim(sanitize_text_field(wp_unslash($item['image'] ?? '')));
+        if (! empty($img)) {
+            $clean_items[] = array(
+                'image' => $img,
+                'title' => sanitize_text_field(wp_unslash($item['title'] ?? '')),
+                'alt'   => sanitize_text_field(wp_unslash($item['alt'] ?? '')),
+            );
+        }
+    }
+    update_post_meta($post_id, 'landing_feedback_items', wp_json_encode($clean_items, JSON_UNESCAPED_UNICODE));
+} elseif (isset($_POST['landing_feedback_items'])) {
+    $raw = wp_unslash($_POST['landing_feedback_items']);
+    $decoded = is_array($raw) ? $raw : json_decode($raw, true);
+    if (is_array($decoded)) {
+        $clean_items = array();
+        foreach ($decoded as $item) {
+            $img = is_array($item) ? trim(sanitize_text_field($item['image'] ?? '')) : trim(sanitize_text_field($item));
+            if (! empty($img)) {
+                $clean_items[] = array(
+                    'image' => $img,
+                    'title' => is_array($item) ? sanitize_text_field($item['title'] ?? '') : '',
+                    'alt'   => is_array($item) ? sanitize_text_field($item['alt'] ?? '') : '',
+                );
+            }
+        }
+        update_post_meta($post_id, 'landing_feedback_items', wp_json_encode($clean_items, JSON_UNESCAPED_UNICODE));
+    }
+}
 
 // 13. Đồng bộ sang landing_custom_json
 $res = thientam_landing_get_data_hieu_minh($post_id, 'hieu-minh');

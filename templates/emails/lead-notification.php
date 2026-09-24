@@ -76,14 +76,30 @@ include __DIR__ . '/header.php';
                 if (in_array($k_lower, array('họ và tên', 'họ tên', 'số điện thoại', 'sđt', 'email', 'name', 'phone'))) {
                     continue;
                 }
-                $val_str = is_array($v) ? json_encode($v, JSON_UNESCAPED_UNICODE) : (string)$v;
+                $val_str    = is_array($v) ? json_encode($v, JSON_UNESCAPED_UNICODE) : (string)$v;
+                $is_payment = in_array($k_lower, array('tình trạng thanh toán', 'trạng thái thanh toán'));
+                $val_lower  = function_exists('mb_strtolower') ? mb_strtolower($val_str, 'UTF-8') : strtolower($val_str);
+                $is_pending = $is_payment && (strpos($val_lower, 'chờ') !== false || strpos($val_lower, 'đang chờ') !== false);
                 ?>
                 <tr>
-                    <td class="table-label" style="padding: 12px 16px; background-color: #F8FAFC; border-bottom: 1px solid #E2E8F0; font-weight: 600; color: #475569;"><?php echo esc_html($k); ?>:</td>
-                    <td class="table-value" style="padding: 12px 16px; background-color: #ffffff; border-bottom: 1px solid #E2E8F0; color: #0D2A54; font-weight: 600;"><?php echo nl2br(esc_html($val_str)); ?></td>
+                    <td class="table-label" style="padding: 12px 16px; background-color: <?php echo $is_payment ? '#FFFBEB' : '#F8FAFC'; ?>; border-bottom: 1px solid #E2E8F0; font-weight: 600; color: <?php echo $is_payment ? '#92400E' : '#475569'; ?>;"><?php echo esc_html($k); ?>:</td>
+                    <td class="table-value" style="padding: 12px 16px; background-color: <?php echo $is_payment ? '#FFFBEB' : '#ffffff'; ?>; border-bottom: 1px solid #E2E8F0; color: #0D2A54; font-weight: 600;">
+                        <?php if ($is_pending) : ?>
+                            <span style="display:inline-block; padding: 4px 12px; background-color: #FEF3C7; color: #92400E; border: 1px solid #FCD34D; border-radius: 6px; font-weight: 700; font-size: 13px;">
+                                ⏳ Đang chờ thanh toán
+                            </span>
+                        <?php elseif ($is_payment) : ?>
+                            <span style="display:inline-block; padding: 4px 12px; background-color: #DEF7EC; color: #03543F; border: 1px solid #BCF0DA; border-radius: 6px; font-weight: 700; font-size: 13px;">
+                                <?php echo esc_html($val_str); ?>
+                            </span>
+                        <?php else : ?>
+                            <?php echo nl2br(esc_html($val_str)); ?>
+                        <?php endif; ?>
+                    </td>
                 </tr>
             <?php endforeach; ?>
         <?php endif; ?>
+
 
         <?php if (!empty($message)) : ?>
             <tr>

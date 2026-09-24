@@ -189,12 +189,27 @@ function thientam_landing_save_seo_meta($post_id, &$defaults)
         $defaults['meta']['keywords'] = array_values($kws);
     }
 
+    // 3.1. OG Image tùy biến
+    if (isset($_POST['landing_meta_og_image'])) {
+        $val = esc_url_raw(wp_unslash($_POST['landing_meta_og_image']));
+        update_post_meta($post_id, 'landing_meta_og_image', $val);
+        if (! empty($val)) {
+            $defaults['meta']['ogImage'] = $val;
+        }
+    }
+
     // 4. Tự động đồng bộ Thumbnail WP (Featured Image)
     $wp_thumb_url = get_the_post_thumbnail_url($post_id, 'full');
     if (! empty($wp_thumb_url)) {
         $defaults['meta']['thumbnail'] = $wp_thumb_url;
         $defaults['thumbnail'] = $wp_thumb_url;
         $defaults['meta']['image'] = $wp_thumb_url;
+        if (empty($defaults['meta']['ogImage'])) {
+            $defaults['meta']['ogImage'] = $wp_thumb_url;
+        }
+    }
+    if (empty($defaults['meta']['ogImage'])) {
+        $defaults['meta']['ogImage'] = 'https://site.thientam68.com/wp-content/uploads/2026/08/Placeholder-Thien-Tam.png';
     }
 
     // 5. Header Nav CTA (đồng bộ cùng tab SEO & Header)
@@ -855,4 +870,162 @@ function thientam_landing_save_registration_meta($post_id, &$defaults)
     }
 }
 }
+
+if (! function_exists('thientam_landing_save_approach_meta')) {
+/**
+ * Shared save logic for Approach section (Phương pháp tiếp cận / Triết lý)
+ *
+ * @param int   $post_id
+ * @param array &$defaults Passed by reference
+ */
+function thientam_landing_save_approach_meta($post_id, &$defaults)
+{
+    if (! is_array($defaults)) {
+        $defaults = array();
+    }
+    if (! isset($defaults['approach']) || ! is_array($defaults['approach'])) {
+        $defaults['approach'] = array();
+    }
+
+    if (isset($_POST['landing_approach_title_prefix'])) {
+        $val = sanitize_text_field(wp_unslash($_POST['landing_approach_title_prefix']));
+        $defaults['approach']['titlePrefix'] = $val;
+        update_post_meta($post_id, 'landing_approach_title_prefix', $val);
+    }
+    if (isset($_POST['landing_approach_title_highlight'])) {
+        $val = sanitize_text_field(wp_unslash($_POST['landing_approach_title_highlight']));
+        $defaults['approach']['titleHighlight'] = $val;
+        update_post_meta($post_id, 'landing_approach_title_highlight', $val);
+    }
+
+    // Tiêu đề tổng hợp
+    $app_pre = $defaults['approach']['titlePrefix'] ?? '';
+    $app_hl  = $defaults['approach']['titleHighlight'] ?? '';
+    if (! empty($app_pre) || ! empty($app_hl)) {
+        $defaults['approach']['title'] = trim($app_pre . ' ' . $app_hl);
+    }
+
+    if (isset($_POST['landing_approach_desc1'])) {
+        $val = sanitize_textarea_field(wp_unslash($_POST['landing_approach_desc1']));
+        $defaults['approach']['desc1'] = $val;
+        $defaults['approach']['desc']  = $val;
+        update_post_meta($post_id, 'landing_approach_desc1', $val);
+        update_post_meta($post_id, 'landing_approach_desc', $val);
+    } elseif (isset($_POST['landing_approach_desc'])) {
+        $val = sanitize_textarea_field(wp_unslash($_POST['landing_approach_desc']));
+        $defaults['approach']['desc1'] = $val;
+        $defaults['approach']['desc']  = $val;
+        update_post_meta($post_id, 'landing_approach_desc', $val);
+        update_post_meta($post_id, 'landing_approach_desc1', $val);
+    }
+
+    if (isset($_POST['landing_approach_desc2'])) {
+        $val = sanitize_textarea_field(wp_unslash($_POST['landing_approach_desc2']));
+        $defaults['approach']['desc2'] = $val;
+        update_post_meta($post_id, 'landing_approach_desc2', $val);
+    }
+
+    if (isset($_POST['landing_approach_card_title'])) {
+        $val = sanitize_text_field(wp_unslash($_POST['landing_approach_card_title']));
+        $defaults['approach']['cardTitle']   = $val;
+        $defaults['approach']['visualQuote'] = $val;
+        update_post_meta($post_id, 'landing_approach_card_title', $val);
+        update_post_meta($post_id, 'landing_approach_visual_quote', $val);
+    } elseif (isset($_POST['landing_approach_visual_quote'])) {
+        $val = sanitize_text_field(wp_unslash($_POST['landing_approach_visual_quote']));
+        $defaults['approach']['cardTitle']   = $val;
+        $defaults['approach']['visualQuote'] = $val;
+        update_post_meta($post_id, 'landing_approach_visual_quote', $val);
+        update_post_meta($post_id, 'landing_approach_card_title', $val);
+    }
+
+    if (isset($_POST['landing_approach_card_badge'])) {
+        $val = sanitize_text_field(wp_unslash($_POST['landing_approach_card_badge']));
+        $defaults['approach']['cardBadge']   = $val;
+        $defaults['approach']['visualLabel'] = $val;
+        update_post_meta($post_id, 'landing_approach_card_badge', $val);
+        update_post_meta($post_id, 'landing_approach_visual_label', $val);
+    } elseif (isset($_POST['landing_approach_visual_label'])) {
+        $val = sanitize_text_field(wp_unslash($_POST['landing_approach_visual_label']));
+        $defaults['approach']['cardBadge']   = $val;
+        $defaults['approach']['visualLabel'] = $val;
+        update_post_meta($post_id, 'landing_approach_visual_label', $val);
+        update_post_meta($post_id, 'landing_approach_card_badge', $val);
+    }
+
+    if (isset($_POST['landing_approach_image'])) {
+        $aimg = esc_url_raw(trim(wp_unslash($_POST['landing_approach_image'])));
+        if (! empty($aimg)) {
+            $defaults['approach']['image'] = $aimg;
+        } else {
+            unset($defaults['approach']['image']);
+        }
+        update_post_meta($post_id, 'landing_approach_image', $aimg);
+    }
+
+    if (isset($_POST['landing_approach_image_alt'])) {
+        $val = sanitize_text_field(wp_unslash($_POST['landing_approach_image_alt']));
+        $defaults['approach']['imageAlt'] = $val;
+        update_post_meta($post_id, 'landing_approach_image_alt', $val);
+    }
+
+    if (isset($_POST['landing_approach_btn'])) {
+        $val = sanitize_text_field(wp_unslash($_POST['landing_approach_btn']));
+        $defaults['approach']['btn'] = $val;
+        update_post_meta($post_id, 'landing_approach_btn', $val);
+    }
+
+    if (isset($_POST['landing_approach_notice'])) {
+        $val = sanitize_textarea_field(wp_unslash($_POST['landing_approach_notice']));
+        $defaults['approach']['notice'] = $val;
+        update_post_meta($post_id, 'landing_approach_notice', $val);
+    }
+
+    // Pills / Points
+    if (isset($_POST['landing_approach_pills'])) {
+        $lines = array_filter(array_map('trim', explode("\n", str_replace("\r", "", wp_unslash($_POST['landing_approach_pills'])))));
+        $pills_list = array();
+        $points_list = array();
+        foreach ($lines as $line) {
+            $clean_line = sanitize_text_field($line);
+            if ($clean_line === '') continue;
+            if (preg_match('/^\*\*(.*?)\*\*\s*(.*)$/u', $clean_line, $matches)) {
+                $b = trim($matches[1]);
+                $t = trim($matches[2]);
+                $pills_list[] = $clean_line;
+                $points_list[] = array('bold' => $b, 'text' => $t);
+            } else {
+                $pills_list[] = $clean_line;
+                $points_list[] = array('bold' => '', 'text' => $clean_line);
+            }
+        }
+        $defaults['approach']['pills']  = array_values($pills_list);
+        $defaults['approach']['points'] = array_values($points_list);
+        update_post_meta($post_id, 'landing_approach_pills', wp_json_encode(array_values($pills_list), JSON_UNESCAPED_UNICODE));
+        update_post_meta($post_id, 'landing_approach_points', wp_json_encode(array_values($points_list), JSON_UNESCAPED_UNICODE));
+    } elseif (isset($_POST['landing_approach_points'])) {
+        $lines = array_filter(array_map('trim', explode("\n", str_replace("\r", "", wp_unslash($_POST['landing_approach_points'])))));
+        $pills_list = array();
+        $points_list = array();
+        foreach ($lines as $line) {
+            $clean_line = sanitize_text_field($line);
+            if ($clean_line === '') continue;
+            if (preg_match('/^\*\*(.*?)\*\*\s*(.*)$/u', $clean_line, $matches)) {
+                $b = trim($matches[1]);
+                $t = trim($matches[2]);
+                $pills_list[] = $clean_line;
+                $points_list[] = array('bold' => $b, 'text' => $t);
+            } else {
+                $pills_list[] = $clean_line;
+                $points_list[] = array('bold' => '', 'text' => $clean_line);
+            }
+        }
+        $defaults['approach']['pills']  = array_values($pills_list);
+        $defaults['approach']['points'] = array_values($points_list);
+        update_post_meta($post_id, 'landing_approach_pills', wp_json_encode(array_values($pills_list), JSON_UNESCAPED_UNICODE));
+        update_post_meta($post_id, 'landing_approach_points', wp_json_encode(array_values($points_list), JSON_UNESCAPED_UNICODE));
+    }
+}
+}
+
 

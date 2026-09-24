@@ -268,7 +268,7 @@ function thientam_format_service_detail_data($post_id)
             'meta_title'       => get_post_meta($post_id, 'seo_meta_title', true) ?: '',
             'meta_description' => get_post_meta($post_id, 'seo_meta_description', true) ?: '',
             'meta_keywords'    => get_post_meta($post_id, 'seo_meta_keywords', true) ?: '',
-            'og_image'         => get_post_meta($post_id, 'seo_og_image', true) ?: '',
+            'og_image'         => get_post_meta($post_id, 'seo_og_image', true) ?: ($thumbnail_url ?: 'https://site.thientam68.com/wp-content/uploads/2026/08/Placeholder-Thien-Tam.png'),
         ),
     );
 }

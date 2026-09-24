@@ -89,6 +89,9 @@ $text_fields = array(
     'landing_faq_title',
     'landing_faq_desc',
     'landing_faq_note',
+    'landing_feedback_title_prefix',
+    'landing_feedback_title_highlight',
+    'landing_feedback_desc',
     'landing_final_title_prefix',
     'landing_final_title_highlight',
     'landing_final_lead',
@@ -297,6 +300,55 @@ if (isset($_POST['trust_cards']) && is_array($_POST['trust_cards'])) {
 
 // FAQ (Dùng chung)
 include dirname(__DIR__) . '/save-faq.php';
+
+// Feedback (Hình ảnh phản hồi)
+if (! isset($defaults['feedback']) || ! is_array($defaults['feedback'])) {
+    $defaults['feedback'] = array();
+}
+if (isset($_POST['landing_feedback_title_prefix'])) {
+    $defaults['feedback']['titlePrefix'] = sanitize_text_field(wp_unslash($_POST['landing_feedback_title_prefix']));
+}
+if (isset($_POST['landing_feedback_title_highlight'])) {
+    $defaults['feedback']['titleHighlight'] = sanitize_text_field(wp_unslash($_POST['landing_feedback_title_highlight']));
+}
+if (isset($_POST['landing_feedback_desc'])) {
+    $defaults['feedback']['desc'] = sanitize_textarea_field(wp_unslash($_POST['landing_feedback_desc']));
+}
+if (isset($_POST['feedback_items']) && is_array($_POST['feedback_items'])) {
+    $clean_items = array();
+    foreach ($_POST['feedback_items'] as $item) {
+        $img = esc_url_raw(trim(wp_unslash($item['image'] ?? '')));
+        $alt = sanitize_text_field(wp_unslash($item['alt'] ?? ''));
+        $title = sanitize_text_field(wp_unslash($item['title'] ?? ''));
+        if (! empty($img)) {
+            $clean_items[] = array(
+                'image' => $img,
+                'alt'   => $alt,
+                'title' => $title,
+            );
+        }
+    }
+    $defaults['feedback']['items'] = $clean_items;
+    update_post_meta($post_id, 'landing_feedback_items', wp_json_encode($clean_items, JSON_UNESCAPED_UNICODE));
+} elseif (isset($_POST['landing_feedback_items'])) {
+    $raw = wp_unslash($_POST['landing_feedback_items']);
+    $decoded = is_string($raw) ? json_decode($raw, true) : $raw;
+    if (is_array($decoded)) {
+        $clean_items = array();
+        foreach ($decoded as $item) {
+            $img = esc_url_raw(trim($item['image'] ?? ''));
+            if (! empty($img)) {
+                $clean_items[] = array(
+                    'image' => $img,
+                    'alt'   => sanitize_text_field($item['alt'] ?? ''),
+                    'title' => sanitize_text_field($item['title'] ?? ''),
+                );
+            }
+        }
+        $defaults['feedback']['items'] = $clean_items;
+        update_post_meta($post_id, 'landing_feedback_items', wp_json_encode($clean_items, JSON_UNESCAPED_UNICODE));
+    }
+}
 
 // Form Đăng ký - Cột trái (Dùng chung)
 include dirname(__DIR__) . '/save-registration.php';

@@ -1034,11 +1034,18 @@ function custom_sepay_build_qr_url(int $amount, string $payment_code): string
     $account_number = custom_sepay_get_setting('account_number', '');
     $account_holder = custom_sepay_get_setting('account_holder', 'PHONG THUY THIEN TAM');
 
+    $des = $payment_code;
+    if (stripos($bank_name, 'Vietin') !== false) {
+        if (strpos($payment_code, 'SEVQR') !== 0) {
+            $des = 'SEVQR ' . $payment_code;
+        }
+    }
+
     $query = [
         'acc'      => $account_number,
         'bank'     => $bank_name,
         'amount'   => $amount,
-        'des'      => $payment_code,
+        'des'      => $des,
         'template' => 'compact',
     ];
 
@@ -1097,9 +1104,19 @@ function custom_sepay_register_rest_routes()
         'permission_callback' => '__return_true',
     ]);
 
-    // 8.3. Webhook tiếp nhận từ SePay: POST /wp-json/custom-sepay/v1/webhook
+    // 8.3. Webhook tiếp nhận từ SePay: POST /wp-json/custom-sepay/v1/webhook (hỗ trợ GET để kiểm tra trạng thái)
     register_rest_route('custom-sepay/v1', '/webhook', [
-        'methods'             => WP_REST_Server::CREATABLE,
+        'methods'             => ['POST', 'GET'],
+        'callback'            => 'custom_sepay_webhook',
+        'permission_callback' => '__return_true',
+    ]);
+    register_rest_route('sepay/v1', '/webhook', [
+        'methods'             => ['POST', 'GET'],
+        'callback'            => 'custom_sepay_webhook',
+        'permission_callback' => '__return_true',
+    ]);
+    register_rest_route('thientam/v1', '/sepay/webhook', [
+        'methods'             => ['POST', 'GET'],
         'callback'            => 'custom_sepay_webhook',
         'permission_callback' => '__return_true',
     ]);
@@ -1113,6 +1130,13 @@ function custom_sepay_register_rest_routes()
     register_rest_route('thientam/v1', '/sepay/config', [
         'methods'             => WP_REST_Server::READABLE,
         'callback'            => 'custom_sepay_get_public_config',
+        'permission_callback' => '__return_true',
+    ]);
+
+    // 8.5. Debug helper: GET /wp-json/custom-sepay/v1/debug
+    register_rest_route('custom-sepay/v1', '/debug', [
+        'methods'             => WP_REST_Server::READABLE,
+        'callback'            => 'custom_sepay_debug_status',
         'permission_callback' => '__return_true',
     ]);
 }
@@ -1136,6 +1160,54 @@ function custom_sepay_get_public_config()
         'account_holder' => $account_holder,
         'payment_prefix' => $payment_prefix,
         'developer'      => 'iLynk Solution',
+    ], 200);
+}
+
+/**
+ * 8.5. Callback: Debug thông tin đơn hàng và webhook logs
+ */
+function custom_sepay_debug_status(WP_REST_Request $request)
+{
+    $webhook_key   = defined('SEPAY_WEBHOOK_KEY') && SEPAY_WEBHOOK_KEY !== '' ? SEPAY_WEBHOOK_KEY : get_option('sepay_webhook_key', '');
+    $authorization = trim((string) $request->get_header('authorization'));
+    $is_authorized = current_user_can('manage_options') ||
+        (! empty($webhook_key) && ($authorization === 'Apikey ' . $webhook_key || $authorization === $webhook_key));
+
+    if (! $is_authorized) {
+        return new WP_Error('forbidden', 'Không có quyền truy cập thông tin chẩn đoán.', ['status' => 403]);
+    }
+    $orders = get_posts([
+        'post_type'      => 'sepay_order',
+        'post_status'    => 'any',
+        'posts_per_page' => 10,
+        'orderby'        => 'ID',
+        'order'          => 'DESC',
+    ]);
+    $order_list = [];
+    foreach ($orders as $o) {
+        $order_list[] = [
+            'id'             => $o->ID,
+            'title'          => $o->post_title,
+            'payment_code'   => get_post_meta($o->ID, 'payment_code', true),
+            'status'         => get_post_meta($o->ID, 'payment_status', true),
+            'amount'         => (int) get_post_meta($o->ID, 'amount', true),
+            'paid_at'        => get_post_meta($o->ID, 'paid_at', true),
+            'created_at'     => get_post_meta($o->ID, 'created_at', true),
+            'webhook_error'  => get_post_meta($o->ID, 'sepay_webhook_last_error', true),
+            'history'        => get_post_meta($o->ID, 'sepay_webhook_history', true),
+        ];
+    }
+    return new WP_REST_Response([
+        'settings'        => [
+            'is_sandbox'     => get_option('sepay_is_sandbox', '1'),
+            'account_number' => custom_sepay_get_setting('account_number', ''),
+            'bank_name'      => custom_sepay_get_setting('bank_name', 'MBBank'),
+            'payment_prefix' => custom_sepay_get_setting('payment_prefix', 'TT'),
+            'is_enabled'     => get_option('sepay_enabled', '1'),
+            'webhook_key'    => substr(get_option('sepay_webhook_key', ''), 0, 4) . '***',
+        ],
+        'recent_orders'   => $order_list,
+        'recent_webhooks' => get_option('custom_sepay_recent_webhooks', []),
     ], 200);
 }
 
@@ -1235,13 +1307,16 @@ function custom_sepay_create_order(WP_REST_Request $request)
     update_post_meta($post_id, 'checkout_url', $checkout_url);
     update_post_meta($post_id, 'created_at', current_time('mysql'));
 
-    $qr_url     = custom_sepay_build_qr_url($amount, $payment_code);
-    $status_url = rest_url('custom-sepay/v1/orders/' . $public_token . '/status');
+    $qr_url       = custom_sepay_build_qr_url($amount, $payment_code);
+    $status_url   = rest_url('custom-sepay/v1/orders/' . $public_token . '/status');
+    $bank_name    = custom_sepay_get_setting('bank_name', 'MBBank');
+    $payment_memo = (stripos($bank_name, 'Vietin') !== false) ? ('SEVQR ' . $payment_code) : $payment_code;
 
     return new WP_REST_Response([
         'success'          => true,
         'order_id'         => $post_id,
         'payment_code'     => $payment_code,
+        'payment_memo'     => $payment_memo,
         'amount'           => $amount,
         'amount_formatted' => number_format($amount, 0, ',', '.') . 'đ',
         'qr_url'           => $qr_url,
@@ -1343,10 +1418,14 @@ function custom_sepay_get_order_status(WP_REST_Request $request)
     header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
     header('Pragma: no-cache');
 
+    $bank_name    = custom_sepay_get_setting('bank_name', 'MBBank');
+    $payment_memo = (stripos($bank_name, 'Vietin') !== false) ? ('SEVQR ' . $code) : (string) $code;
+
     return new WP_REST_Response([
         'success'          => true,
         'order_id'         => $order_id,
         'payment_code'     => (string) $code,
+        'payment_memo'     => $payment_memo,
         'status'           => (string) $status,
         'cancelled_reason' => (string) get_post_meta($order_id, 'cancelled_reason', true),
         'cancelled_at'     => (string) get_post_meta($order_id, 'cancelled_at', true),
@@ -1388,20 +1467,36 @@ function custom_sepay_get_order_status(WP_REST_Request $request)
  */
 function custom_sepay_extract_payment_code(array $payload): string
 {
-    // Kiểm tra trường code trực tiếp từ SePay
-    $code = strtoupper(sanitize_text_field((string) ($payload['code'] ?? '')));
-    if ($code !== '') {
-        return $code;
-    }
-
-    // Nếu không có, tìm kiếm trong nội dung chuyển tiền (content) theo tiền tố
     $prefix = strtoupper(preg_replace('/[^A-Za-z0-9]/', '', custom_sepay_get_setting('payment_prefix', 'TT')));
     $prefix = $prefix !== '' ? $prefix : 'TT';
-    $content = strtoupper(sanitize_text_field((string) ($payload['content'] ?? '')));
 
-    // Tìm kiếm mẫu TT123 hoặc DH123
-    if (preg_match('/\b' . preg_quote($prefix, '/') . '\d+\b/', $content, $matches)) {
-        return $matches[0];
+    $sources = [
+        (string) ($payload['code'] ?? ''),
+        (string) ($payload['content'] ?? ''),
+        (string) ($payload['description'] ?? ''),
+    ];
+
+    // 1. Tìm kiếm theo mẫu prefix + số (chấp nhận có hoặc không dấu cách)
+    $pattern = '/' . preg_quote($prefix, '/') . '\s*(\d+)/i';
+    foreach ($sources as $text) {
+        if (!empty($text) && preg_match($pattern, $text, $matches)) {
+            return $prefix . $matches[1];
+        }
+    }
+
+    // 2. Tìm kiếm theo tiền tố TT mặc định nếu prefix cấu hình khác TT
+    if ($prefix !== 'TT') {
+        foreach ($sources as $text) {
+            if (!empty($text) && preg_match('/TT\s*(\d+)/i', $text, $matches)) {
+                return 'TT' . $matches[1];
+            }
+        }
+    }
+
+    // 3. Nếu trường code từ SePay có giá trị bất kỳ (không phải test SEVN)
+    $code = strtoupper(sanitize_text_field((string) ($payload['code'] ?? '')));
+    if ($code !== '' && strpos($code, 'SEVN') !== 0) {
+        return $code;
     }
 
     return '';
@@ -1412,6 +1507,21 @@ function custom_sepay_extract_payment_code(array $payload): string
  */
 function custom_sepay_webhook(WP_REST_Request $request)
 {
+    // Kiểm tra nhanh qua phương thức GET (trình duyệt hoặc health check)
+    if ($request->get_method() === 'GET') {
+        $webhook_key = defined('SEPAY_WEBHOOK_KEY') && SEPAY_WEBHOOK_KEY !== '' ? SEPAY_WEBHOOK_KEY : get_option('sepay_webhook_key', '');
+        return new WP_REST_Response([
+            'success'     => true,
+            'status'      => 'active',
+            'message'     => 'Cổng Webhook SePay đang hoạt động bình thường và sẵn sàng nhận thông báo giao dịch.',
+            'configured'  => ! empty($webhook_key),
+            'method'      => 'POST',
+            'auth_format' => 'Authorization: Apikey <SEPAY_WEBHOOK_KEY>',
+            'server_time' => current_time('mysql'),
+            'developer'   => 'iLynk Solution',
+        ], 200);
+    }
+
     $webhook_key = defined('SEPAY_WEBHOOK_KEY') && SEPAY_WEBHOOK_KEY !== '' ? SEPAY_WEBHOOK_KEY : get_option('sepay_webhook_key', '');
 
     if (empty($webhook_key)) {
@@ -1441,9 +1551,32 @@ function custom_sepay_webhook(WP_REST_Request $request)
         $payload = $request->get_params();
     }
 
-    // Hỗ trợ kiểm tra kiểm thử từ SePay Dashboard ("Test Webhook")
+    // Ghi log toàn bộ webhook nhận được
+    $recent_logs = (array) get_option('custom_sepay_recent_webhooks', []);
+    $new_log = [
+        'time'          => current_time('mysql'),
+        'method'        => $request->get_method(),
+        'auth_header'   => !empty($request->get_header('authorization')),
+        'payload'       => $payload,
+    ];
+    array_unshift($recent_logs, $new_log);
+    $recent_logs = array_slice($recent_logs, 0, 20);
+    update_option('custom_sepay_recent_webhooks', $recent_logs, false);
+
+    // Hỗ trợ kiểm tra kiểm thử từ SePay Dashboard ("Gửi thử" / "Test Webhook")
     $content_desc = (string) ($payload['content'] ?? ($payload['description'] ?? ''));
-    if (stripos($content_desc, 'Giao dich thu nghiem') !== false || stripos($content_desc, 'thu nghiem') !== false) {
+    $payload_code = strtoupper(trim((string) ($payload['code'] ?? '')));
+    $ref_code     = trim((string) ($payload['referenceCode'] ?? ''));
+
+    $is_test_ping = (
+        stripos($content_desc, 'thu nghiem') !== false ||
+        stripos($content_desc, 'Giao dich thu nghiem') !== false ||
+        strpos($payload_code, 'SEVN') === 0 ||
+        strpos(strtoupper($content_desc), 'SEVN') !== false ||
+        $ref_code === 'FT24012345678'
+    );
+
+    if ($is_test_ping) {
         return new WP_REST_Response([
             'success'   => true,
             'message'   => 'SePay Dashboard Test Webhook Ping Received Successfully (Phát triển bởi iLynk).',
@@ -1453,7 +1586,11 @@ function custom_sepay_webhook(WP_REST_Request $request)
 
     $payment_code = custom_sepay_extract_payment_code($payload);
     if (empty($payment_code)) {
-        return new WP_Error('missing_transaction_data', 'Thiếu dữ liệu giao dịch hoặc không tìm thấy mã thanh toán.', ['status' => 422]);
+        return new WP_REST_Response([
+            'success'   => false,
+            'message'   => 'Bỏ qua giao dịch: Không tìm thấy mã thanh toán hợp lệ trong nội dung chuyển khoản.',
+            'developer' => 'iLynk Solution',
+        ], 200);
     }
 
     // 2. Tìm đơn hàng theo mã payment_code
@@ -1467,7 +1604,11 @@ function custom_sepay_webhook(WP_REST_Request $request)
     ]);
 
     if (! $orders) {
-        return new WP_Error('order_not_found', 'Không tìm thấy đơn hàng với mã thanh toán: ' . $payment_code, ['status' => 404]);
+        return new WP_REST_Response([
+            'success'   => false,
+            'message'   => 'Không tìm thấy đơn hàng với mã thanh toán: ' . $payment_code,
+            'developer' => 'iLynk Solution',
+        ], 200);
     }
 
     $order_id       = (int) $orders[0];
