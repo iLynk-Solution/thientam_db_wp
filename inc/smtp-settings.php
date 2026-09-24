@@ -826,6 +826,7 @@ function thientam_send_payment_failed_email($order_id, $reason = '')
         'customer_notes'   => $customer_notes,
         'order_source'     => $order_source,
         'landing_slug'     => $landing_slug,
+        'timeout_minutes'  => ((int) get_option('sepay_order_timeout', 15) >= 1) ? (int) get_option('sepay_order_timeout', 15) : 15,
     );
 
     $body = thientam_render_email_template('payment-failed', $template_data);

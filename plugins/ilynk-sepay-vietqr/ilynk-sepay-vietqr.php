@@ -883,9 +883,13 @@ function custom_sepay_render_order_details_metabox($post)
                                 <?php
                                 $c_reason = get_post_meta($post_id, 'cancelled_reason', true);
                                 $c_at     = get_post_meta($post_id, 'cancelled_at', true);
+                                $t_min    = (int) get_option('sepay_order_timeout', 15);
+                                if ($t_min < 1) {
+                                    $t_min = 15;
+                                }
                                 $reason_text = ($c_reason === 'site_disabled')
                                     ? 'Đã hủy tự động do Website tắt cổng thanh toán VietQR'
-                                    : (($c_reason === 'timeout') ? 'Đã hủy tự động do hết hạn 15 phút' : 'Đã hủy');
+                                    : (($c_reason === 'timeout') ? "Đã hủy tự động do hết hạn {$t_min} phút" : 'Đã hủy');
                                 ?>
                                 <span style="display: block; font-size: 12px; color: #dc2626; font-weight: 600; margin-top: 4px;">
                                     ⚠️ <?php echo esc_html($reason_text); ?> <?php echo $c_at ? '(' . esc_html($c_at) . ')' : ''; ?>
@@ -1324,6 +1328,7 @@ function custom_sepay_create_order(WP_REST_Request $request)
         'status'           => 'pending',
         'token'            => $public_token,
         'status_url'       => $status_url,
+        'timeout_minutes'   => ((int) get_option('sepay_order_timeout', 15) >= 1) ? (int) get_option('sepay_order_timeout', 15) : 15,
         'timeout_seconds'   => (int) apply_filters('custom_sepay_order_timeout', ((int) get_option('sepay_order_timeout', 15)) * 60, $post_id),
         'remaining_seconds' => (int) apply_filters('custom_sepay_order_timeout', ((int) get_option('sepay_order_timeout', 15)) * 60, $post_id),
         'expires_at'        => date('Y-m-d H:i:s', time() + (int) apply_filters('custom_sepay_order_timeout', ((int) get_option('sepay_order_timeout', 15)) * 60, $post_id)),
@@ -1442,6 +1447,7 @@ function custom_sepay_get_order_status(WP_REST_Request $request)
         'landing_slug'     => (string) $landing_slug,
         'qr_url'           => custom_sepay_build_qr_url($amount, (string) $code),
         'checkout_url'     => $checkout_url,
+        'timeout_minutes'   => $timeout_minutes,
         'timeout_seconds'   => $timeout_seconds,
         'remaining_seconds' => $remaining_seconds,
         'expires_at'        => $expires_at,

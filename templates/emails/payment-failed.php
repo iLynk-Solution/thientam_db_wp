@@ -28,13 +28,17 @@ if (empty($display_service)) {
 
 $is_site_disabled = ($cancelled_reason ?? '') === 'site_disabled';
 $is_timeout       = ($cancelled_reason ?? '') === 'timeout';
+$t_min            = isset($timeout_minutes) ? (int)$timeout_minutes : (int)get_option('sepay_order_timeout', 15);
+if ($t_min < 1) {
+    $t_min = 15;
+}
 
 if ($is_site_disabled) {
     $reason_title = 'Cổng thanh toán trực tuyến trên website hiện đang tạm tắt';
     $reason_desc  = 'Hệ thống hiện đang tạm tắt chức năng thanh toán trực tuyến qua VietQR. Yêu cầu thanh toán tự động cho đơn hàng này đã được hủy.';
 } elseif ($is_timeout) {
-    $reason_title = 'Mã thanh toán đã hết hiệu lực (Quá thời hạn 15 phút)';
-    $reason_desc  = 'Mã thanh toán VietQR có hiệu lực trong vòng 15 phút kể từ thời điểm tạo đơn. Do chưa nhận được giao dịch chuyển khoản trong thời gian này, hệ thống đã tự động kết thúc phiên.';
+    $reason_title = "Mã thanh toán đã hết hiệu lực (Quá thời hạn {$t_min} phút)";
+    $reason_desc  = "Mã thanh toán VietQR có hiệu lực trong vòng {$t_min} phút kể từ thời điểm tạo đơn. Do chưa nhận được giao dịch chuyển khoản trong thời gian này, hệ thống đã tự động kết thúc phiên.";
 } else {
     $reason_title = 'Giao dịch thanh toán chưa được hoàn tất';
     $reason_desc  = 'Hệ thống chưa ghi nhận được khoản chuyển khoản hợp lệ hoặc giao dịch đã bị hủy.';
